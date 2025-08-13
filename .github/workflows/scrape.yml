@@ -7,7 +7,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write  # commit & push 권한
+  contents: write
 
 jobs:
   scrape-update:
@@ -39,7 +39,6 @@ jobs:
             --base-draw 1184 \
             --base-date 2025-08-09
 
-      # ⤵ 디버그: data 디렉토리와 주요 파일 머리 5줄 출력
       - name: Debug: list data dir
         run: |
           echo "[data contents]"
@@ -55,13 +54,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # .gitignore에 막혀도 강제로 stage
           git add -f data/*.csv data/*.geojson docs/scoring.md || true
-
-          # 무엇이 staged 되었는지 확인
           git status --porcelain
-
           if ! git diff --cached --quiet; then
             git commit -m "chore(data): weekly scrape & A3 recompute [skip ci]"
             git push
