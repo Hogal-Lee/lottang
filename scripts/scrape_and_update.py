@@ -1,165 +1,99 @@
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-scrape_and_update.py
-- 매주 실행: 동행복권 1/2등 배출점 스크래핑 → wins.csv 갱신 → A3 점수 재계산 → GeoJSON/리포트 갱신
-- 의존:
-  - scripts/compute_a3_scores.py (A3 점수 계산)
-  - data/stores_clean.geojson (기존 매장 좌표/ID 참조)
-출력:
-  - data/dhlottery_stores.csv (원시 수집 누적)
-  - data/wins.csv (store_id 매칭된 이벤트)
-  - data/stores_clean.a3.geojson (A3 반영본)
-  - data/scores_a3_summary.csv
+동행복권 1/2등 판매점 스크레이핑 (Requests+lxml)
+- 대상: https://www.dhlottery.co.kr/store.do?method=topStore&pageGubun=L645&drwNo=회차
+- 산출: data/dhlottery_stores.csv (누적), data/wins.csv, data/wins_unmatched.csv,
+       data/stores_clean.a3.geojson, data/scores_a3_summary.csv
 """
-
-import os, sys, time, csv, re, math, json
-from dataclasses import dataclass, asdict
-from typing import List, Tuple, Optional, Dict, Set
-from datetime import datetime, date, timedelta
+import os, re, csv, json, time
+from datetime import date, datetime, timedelta
+from typing import List, Tuple, Dict
 
 import requests
 import pandas as pd
+from lxml import html
 
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-
-BASE_URL = "https://www.dhlottery.co.kr/store.do?method=topStore&pageGubun=L645"
+BASE_URL = "https://www.dhlottery.co.kr/store.do?method=topStore&pageGubun=L645&drwNo={drwNo}"
 LOTTO_JSON = "https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo={drwNo}"
 
-@dataclass
-class StoreRow:
-    draw: int
-    draw_date: str
-    rank: int           # 1 or 2
-    name: str
-    choice_type: str
-    address: str
-
-def build_driver():
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--window-size=1280,2000")
-    options.add_argument("--lang=ko-KR")
-    # GitHub Actions에 설치된 chrome 바이너리 경로 자동 인식
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
-    return driver
-
-def get_draw_date(drw_no: int) -> Optional[str]:
+def get_draw_date(drw_no: int) -> str:
     try:
         r = requests.get(LOTTO_JSON.format(drwNo=drw_no), timeout=10)
         if r.ok:
             j = r.json()
             d = j.get("drwNoDate")
             if d:
-                return d  # 'YYYY-MM-DD'
+                return d  # YYYY-MM-DD
     except Exception:
         pass
-    return None
+    return ""
 
-def click_tab_if_exists(driver, labels: List[str]) -> bool:
-    try:
-        elements = driver.find_elements(By.XPATH, "//*[self::a or self::button or self::li or self::span]")
-        for el in elements:
-            t = el.text.strip()
-            for lab in labels:
-                if lab in t:
-                    driver.execute_script("arguments[0].click();", el)
-                    time.sleep(0.4)
-                    return True
-    except Exception:
-        pass
-    return False
+def fetch_table(drw_no: int) -> Tuple[List[Tuple[str,str,str,int]], str]:
+    """
+    특정 회차의 페이지를 요청해 테이블을 파싱.
+    반환: [(name, choice, address, rank), ...], draw_date
+    테이블 구조(데스크톱):
+      - 1등/2등 각각 별도 테이블(.tbl_data)로 렌더되는 경우가 많음
+      - 또는 한 테이블에 1/2등 구분 열이 포함될 수 있어 대비
+    """
+    url = BASE_URL.format(drwNo=drw_no)
+    r = requests.get(url, timeout=15, headers={"User-Agent":"Mozilla/5.0"})
+    r.raise_for_status()
+    doc = html.fromstring(r.text)
 
-def collect_rows_on_current_view(driver, rank_num: int) -> List[Tuple[str,str,str]]:
-    rows: List[Tuple[str,str,str]] = []
-    # 테이블 기반
-    try:
-        trs = driver.find_elements(By.CSS_SELECTOR, "table.tbl_data tbody tr")
-        for tr in trs:
-            tds = tr.find_elements(By.CSS_SELECTOR, "td")
-            if len(tds) >= 3:
-                name = tds[0].text.strip()
-                choice = tds[1].text.strip()
-                addr = tds[2].text.strip()
-                rows.append((name, choice, addr))
-    except Exception:
-        pass
-    # 카드형
+    draw_date = get_draw_date(drw_no)
+    rows: List[Tuple[str,str,str,int]] = []
+
+    # 1) 테이블(.tbl_data) 모두 훑기
+    tables = doc.cssselect("table.tbl_data")
+    if tables:
+        for t in tables:
+            # 제목/헤더에서 1등/2등을 유추 (테이블 캡션/헤더 텍스트 검사)
+            rank_hint = 0
+            head_text = " ".join(t.xpath(".//caption//text()") + t.xpath(".//th//text()")).strip()
+            if "1등" in head_text: rank_hint = 1
+            if "2등" in head_text: rank_hint = 2 if rank_hint==0 else rank_hint
+
+            for tr in t.xpath(".//tbody/tr"):
+                tds = [("".join(td.xpath(".//text()"))).strip() for td in tr.xpath("./td")]
+                if len(tds) >= 3:
+                    name, choice, addr = tds[0], tds[1], tds[2]
+                    rank = rank_hint
+                    # 혹시 별도 열에 '1등/2등' 표기가 있으면 덮어쓰기
+                    for cell in tds:
+                        if "1등" in cell: rank = 1
+                        if "2등" in cell: rank = 2
+                    if rank in (1,2):
+                        rows.append((name, choice, addr, rank))
+
+    # 2) 테이블에서 못 찾았을 경우(예외) 카드형 구조 대체 파싱
     if not rows:
-        try:
-            lis = driver.find_elements(By.CSS_SELECTOR, "ul.list_map li")
-            for li in lis:
-                txt = li.text.strip().splitlines()
-                txt = [t.strip() for t in txt if t.strip()]
-                name = txt[0] if txt else ""
-                choice = ""
-                addr = ""
-                for t in txt:
-                    if any(k in t for k in ("자동","반자동","수동")):
-                        choice = t; break
-                cand = [t for t in txt if any(k in t for k in ("구 ","동","로","길"))]
-                if cand:
-                    addr = cand[-1]
-                rows.append((name, choice, addr))
-        except Exception:
-            pass
-    # dedup
-    ded = set()
-    final = []
-    for n,c,a in rows:
-        key=(n,c,a)
-        if key in ded: continue
-        ded.add(key)
-        final.append((n,c,a))
-    return final
+        cards = doc.cssselect("ul.list_map li")
+        for li in cards:
+            txt = [t.strip() for t in li.xpath(".//text()") if t.strip()]
+            if not txt: continue
+            name = txt[0]
+            choice = next((t for t in txt if any(k in t for k in ("자동","반자동","수동"))), "")
+            addr = ""
+            cand = [t for t in txt if any(k in t for k in ("구 ","동","로","길"))]
+            if cand: addr = cand[-1]
+            # 카드형에선 등수 단서가 희박 → 여기선 판별 불가 시 스킵
+            # (필요 시 '1등 판매점', '2등 판매점' 등의 상위 헤더를 추가 탐색)
+            # 안전하게 스킵
+        # NOTE: 카드형이 나오면 구조 확인 후 선택자 보강 필요
 
-def scrape_one_draw(driver, drw_no:int, delay:float=0.6) -> List[StoreRow]:
-    url = f"{BASE_URL}&drwNo={drw_no}"
-    driver.get(url)
-    time.sleep(delay)
-    date_str = get_draw_date(drw_no) or ""
-    out: List[StoreRow] = []
-    # 1등
-    _ = click_tab_if_exists(driver, ["1등","1 등","1st"])
-    for n,c,a in collect_rows_on_current_view(driver, 1):
-        out.append(StoreRow(drw_no, date_str, 1, n, c, a))
-    # 2등
-    _ = click_tab_if_exists(driver, ["2등","2 등","2nd"])
-    for n,c,a in collect_rows_on_current_view(driver, 2):
-        out.append(StoreRow(drw_no, date_str, 2, n, c, a))
-    return out
+    return rows, draw_date
 
-def estimate_latest_draw(base_draw:int, base_date:date, today:date) -> int:
-    # 주1회 규칙으로 최신 회차 추정
-    diff_days = (today - base_date).days
-    inc = diff_days // 7
-    est = base_draw + inc
-    # JSON으로 전진 탐색(있으면 +1 계속)
-    cur = est
-    while True:
-        nxt = cur + 1
-        if get_draw_date(nxt):
-            cur = nxt
-        else:
-            break
-    return cur
-
-def normalize(s:str)->str:
+def normalize(s: str) -> str:
     s = (s or "").strip()
-    s = re.sub(r"\s+", "", s)  # 공백 제거
-    s = s.replace("편의점","")  # 과한 수식어 제거 예시
+    s = re.sub(r"\s+","",s)
+    s = s.replace("편의점","")
     return s
 
-def build_store_index(geojson_path:str)->Dict[str,str]:
-    with open(geojson_path,"r",encoding="utf-8") as f:
-        gj=json.load(f)
+def build_store_index(geojson_path: str) -> Dict[str,str]:
+    with open(geojson_path, "r", encoding="utf-8") as f:
+        gj = json.load(f)
     idx={}
     for ft in gj.get("features",[]):
         p=ft.get("properties",{})
@@ -167,27 +101,16 @@ def build_store_index(geojson_path:str)->Dict[str,str]:
         idx[key]=p.get("store_id")
     return idx
 
-def main():
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--repo-root", required=True)
-    parser.add_argument("--base-draw", type=int, required=True)
-    parser.add_argument("--base-date", type=str, required=True)  # YYYY-MM-DD
-    args = parser.parse_args()
-
-    repo = args.repo_root
-    data_dir = os.path.join(repo, "data")
+def main(repo_root: str, base_draw: int, base_date: str):
+    data_dir = os.path.join(repo_root, "data")
     os.makedirs(data_dir, exist_ok=True)
 
-    base_draw = args.base_draw
-    base_date = datetime.strptime(args.base_date, "%Y-%m-%d").date()
+    # 최신 회차 추정: base 기준 주 1회
+    base_d = datetime.strptime(base_date, "%Y-%m-%d").date()
     today = date.today()
+    est = base_draw + ((today - base_d).days // 7)
 
-    # 1) 최신 회차 추정
-    latest = estimate_latest_draw(base_draw, base_date, today)
-    print(f"[INFO] 최신 회차 추정: {latest} (기준 {base_draw}@{base_date})")
-
-    # 2) 기존 CSV 로드
+    # 기존 CSV 로드
     stores_csv = os.path.join(data_dir, "dhlottery_stores.csv")
     if os.path.exists(stores_csv):
         df = pd.read_csv(stores_csv)
@@ -195,31 +118,29 @@ def main():
         df = pd.DataFrame(columns=["draw","draw_date","rank","name","choice_type","address"])
 
     have_draws = set(df["draw"].unique().tolist()) if not df.empty else set()
-    start_draw = min(have_draws) if have_draws else latest
-    # 누락 회차 모두 수집
-    to_fetch = [d for d in range(min(have_draws|{latest}), latest+1) if d not in have_draws] if have_draws else [latest]
-    print(f"[INFO] 새로 수집할 회차: {to_fetch}")
+    to_fetch = [d for d in range(min(have_draws|{est}), est+1) if d not in have_draws] if have_draws else [est]
 
-    if to_fetch:
-        driver = build_driver()
-        try:
-            rows_all: List[StoreRow] = []
-            for drw in to_fetch:
-                print(f"[SCRAPE] {drw}")
-                rows = scrape_one_draw(driver, drw)
-                rows_all.extend(rows)
-            if rows_all:
-                df_new = pd.DataFrame([asdict(r) for r in rows_all])
-                df = pd.concat([df, df_new], ignore_index=True)
-        finally:
-            driver.quit()
+    all_rows = []
+    for drw in to_fetch:
+        print(f"[SCRAPE-REQUESTS] {drw}")
+        rows, ddate = fetch_table(drw)
+        # 최소 안전장치: 0건일 때는 건너뛰되 로그 남김
+        if not rows:
+            print(f"[WARN] draw {drw}: parsed 0 rows (HTML 구조 변화 가능)")
+        for name, choice, addr, rank in rows:
+            all_rows.append({"draw": drw, "draw_date": ddate, "rank": rank,
+                             "name": name, "choice_type": choice, "address": addr})
 
-        # 저장
-        df.sort_values(["draw","rank","name"], inplace=True)
-        df.to_csv(stores_csv, index=False, encoding="utf-8")
-        print(f"[SAVE] {stores_csv} ({len(df)} rows)")
+    if all_rows:
+        df_new = pd.DataFrame(all_rows)
+        df = pd.concat([df, df_new], ignore_index=True)
 
-    # 3) store_id 매칭 → wins.csv 생성/갱신
+    # 저장(빈 경우라도 파일 생성)
+    df.sort_values(["draw","rank","name"], inplace=True)
+    df.to_csv(stores_csv, index=False, encoding="utf-8")
+    print(f"[SAVE] {stores_csv} ({len(df)} rows)")
+
+    # 매칭 → wins.csv
     geojson_path = os.path.join(data_dir, "stores_clean.geojson")
     wins_csv = os.path.join(data_dir, "wins.csv")
     unmatched_csv = os.path.join(data_dir, "wins_unmatched.csv")
@@ -230,27 +151,45 @@ def main():
         unmatched = []
         for _, r in df.iterrows():
             key = normalize(str(r["name"])) + "|" + normalize(str(r["address"]))
-            store_id = idx.get(key)
+            sid = idx.get(key, "")
             row = {
-                "store_id": store_id or "",
+                "store_id": sid,
                 "date": r["draw_date"],
                 "rank": int(r["rank"]),
                 "draw_no": int(r["draw"]),
                 "name": r["name"],
                 "address": r["address"]
             }
-            if store_id:
-                wins_rows.append(row)
-            else:
-                unmatched.append(row)
+            if sid: wins_rows.append(row)
+            else: unmatched.append(row)
         pd.DataFrame(wins_rows).to_csv(wins_csv, index=False, encoding="utf-8")
         pd.DataFrame(unmatched).to_csv(unmatched_csv, index=False, encoding="utf-8")
         print(f"[SAVE] {wins_csv}, {unmatched_csv}")
-
-        # 4) A3 점수 재계산
-        os.system(f'python scripts/compute_a3_scores.py --geojson "{geojson_path}" --events "{wins_csv}" --out-geojson "{os.path.join(data_dir,"stores_clean.a3.geojson")}" --out-summary "{os.path.join(data_dir,"scores_a3_summary.csv")}" --today {today.isoformat()}')
     else:
-        print(f"[WARN] {geojson_path} 없음. wins.csv만 생성합니다. 이후 GeoJSON 추가 후 재실행하세요.")
+        print(f"[WARN] {geojson_path} not found. A3 will be skipped.")
 
 if __name__ == "__main__":
-    main()
+    import argparse, subprocess
+    p = argparse.ArgumentParser()
+    p.add_argument("--repo-root", required=True)
+    p.add_argument("--base-draw", type=int, required=True)
+    p.add_argument("--base-date", type=str, required=True)
+    args = p.parse_args()
+
+    main(args.repo-root, args.base-draw, args.base-date)
+
+    # A3 계산(geojson이 있는 경우에만)
+    geojson_path = os.path.join(args.repo_root, "data", "stores_clean.geojson")
+    wins_csv = os.path.join(args.repo_root, "data", "wins.csv")
+    if os.path.exists(geojson_path) and os.path.exists(wins_csv):
+        out_geo = os.path.join(args.repo_root, "data", "stores_clean.a3.geojson")
+        out_sum = os.path.join(args.repo_root, "data", "scores_a3_summary.csv")
+        cmd = [
+            "python", os.path.join(args.repo_root, "scripts", "compute_a3_scores.py"),
+            "--geojson", geojson_path,
+            "--events", wins_csv,
+            "--out-geojson", out_geo,
+            "--out-summary", out_sum,
+        ]
+        print("[A3] running:", " ".join(cmd))
+        subprocess.check_call(cmd)
