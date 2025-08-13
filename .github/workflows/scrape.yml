@@ -2,16 +2,17 @@ name: Weekly scrape & update LoTTang
 
 on:
   schedule:
-    # 매주 일요일 15:00 KST(= 06:00 UTC)에 실행
+    # 매주 일요일 15:00 KST(= 06:00 UTC)
     - cron: "0 6 * * 0"
   workflow_dispatch: {}
 
 permissions:
-  contents: write  # commit & push
+  contents: write  # commit & push 권한
 
 jobs:
   scrape-update:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,19 +34,37 @@ jobs:
         env:
           TZ: Asia/Seoul
         run: |
-          python scripts/scrape_and_update.py --repo-root . --base-draw 1184 --base-date 2025-08-09
+          python scripts/scrape_and_update.py \
+            --repo-root . \
+            --base-draw 1184 \
+            --base-date 2025-08-09
 
-# .github/workflows/scrape.yml 의 "Commit & push changes" 스텝을 이렇게 바꿔줘
+      # ⤵ 디버그: data 디렉토리와 주요 파일 머리 5줄 출력
+      - name: Debug: list data dir
+        run: |
+          echo "[data contents]"
+          ls -alh data || true
+          echo "[head -n 5 dhlottery_stores.csv]"
+          head -n 5 data/dhlottery_stores.csv || true
+          echo "[head -n 5 wins.csv]"
+          head -n 5 data/wins.csv || true
+          echo "[head -n 5 scores_a3_summary.csv]"
+          head -n 5 data/scores_a3_summary.csv || true
+
       - name: Commit & push changes (if any)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # 👇 -f 로 .gitignore 무시하고 강제 추가
+
+          # .gitignore에 막혀도 강제로 stage
           git add -f data/*.csv data/*.geojson docs/scoring.md || true
+
+          # 무엇이 staged 되었는지 확인
+          git status --porcelain
+
           if ! git diff --cached --quiet; then
             git commit -m "chore(data): weekly scrape & A3 recompute [skip ci]"
             git push
           else
             echo "No changes to commit."
           fi
-
