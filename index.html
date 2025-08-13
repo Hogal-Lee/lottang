@@ -12,9 +12,6 @@
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
   <meta name="theme-color" content="#2563EB">
 
-  <!-- (선택) PWA manifest: manifest.json 준비되면 주석 해제 -->
-  <!-- <link rel="manifest" href="./manifest.json"> -->
-
   <!-- Kakao Maps JS SDK -->
   <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ca26f9ae7a3d87a3526307104203c1a0&autoload=false&libraries=clusterer"></script>
 
@@ -35,18 +32,23 @@
       box-shadow:var(--shadow); font-family:system-ui,Apple SD Gothic Neo,sans-serif;
       z-index:1000
     }
-    .ui input[type="text"]{flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--border);border-radius:8px}
+    .ui input[type="text"]{
+      flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
+      font-size:16px; /* iOS 자동 확대 방지 */
+      line-height:20px;
+    }
     .ui select,.ui input[type="range"]{padding:8px;border:1px solid var(--border);border-radius:8px}
     .ui label{display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap}
     .btn{padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:#fafafa;cursor:pointer}
     .btn:hover{background:#f0f0f0}
     .badge{padding:4px 8px;border-radius:999px;background:var(--brand-soft);color:#3730a3;font-size:12px}
 
-    /* 상태 패널 */
+    /* 상태 패널 (축소) */
     .panel{
-      position: fixed; top:74px; left:10px; background:var(--bg); padding:6px 10px;
-      border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.15); z-index:1000;
-      font-family:system-ui,Apple SD Gothic Neo,sans-serif
+      position: fixed; top:74px; left:10px; background:var(--bg);
+      padding:4px 8px; border-radius:8px; box-shadow:0 3px 9px rgba(0,0,0,.15);
+      z-index:1000; font-family:system-ui,Apple SD Gothic Neo,sans-serif;
+      font-size:12px; opacity:.95
     }
 
     /* 왼쪽 점수 가이드 + 법적 고지 */
@@ -88,10 +90,13 @@
     .item .meta{font-size:12px; color:#111; display:flex; gap:8px}
     .empty{padding:16px; color:#6b7280; font-size:14px}
 
-    /* 공통 FAB */
-    .fab{position:fixed; z-index:1001; width:44px; height:44px; border-radius:50%;
-      display:flex; align-items:center; justify-content:center; background:var(--brand); color:#fff;
-      box-shadow:0 10px 24px rgba(0,0,0,.25); border:none; cursor:pointer}
+    /* 공통 FAB (화이트 배경 + 2D 아이콘) */
+    .fab{
+      position:fixed; z-index:1001; width:48px; height:48px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center; background:#fff; color:var(--brand);
+      box-shadow:0 10px 24px rgba(0,0,0,.25); border:1px solid var(--border); cursor:pointer
+    }
+    .fab svg{width:22px;height:22px}
     .fab:active{transform:translateY(1px)}
 
     /* 모바일 전용 */
@@ -110,20 +115,20 @@
         display:block; position:fixed; left:0; right:0; bottom:0; z-index:1000;
         background:#fff; border-radius:16px 16px 0 0; box-shadow:0 -8px 24px rgba(0,0,0,.25);
         transform:translateY(calc(100% - 56px)); transition:.25s ease;
+        will-change: transform;
       }
       .bottom-sheet.open{transform:translateY(0)}
-      .bs-handle{height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 12px}
+      .bs-handle{height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; touch-action:none;}
       .bs-drag{width:40px; height:4px; background:#e5e7eb; border-radius:4px; margin:0 auto}
       .bs-title{font-weight:700}
       .bs-content{max-height:45vh; overflow:auto; padding:8px 8px 12px}
-      .bs-count{background:var(--brand-soft); color:#3730a3; padding:4px 8px; border-radius:999px; font-size:12px}
 
-      /* FABs */
+      /* FABs: 기본 위치는 88px, 바텀시트 열리면 JS가 자동 조정 */
       #fabLocate{left:12px; bottom:88px}
       #fabShare{right:12px; bottom:88px}
 
       /* 가이드 토글 버튼 */
-      #btnGuide{position:fixed; left:12px; bottom:144px; z-index:1001; display:inline-flex}
+      #btnGuide{position:fixed; left:12px; bottom:148px; z-index:1001; display:inline-flex}
     }
   </style>
 </head>
@@ -149,7 +154,7 @@
     <span id="count" class="badge">0개</span>
   </div>
 
-  <!-- 상태 패널 -->
+  <!-- 상태 패널(축소) -->
   <div class="panel">로딩 중…</div>
 
   <!-- 왼쪽 점수 가이드 + 법적 고지 -->
@@ -198,7 +203,7 @@
 
   <!-- 모바일: 바텀시트 Top20 -->
   <div id="sheet" class="bottom-sheet">
-    <div class="bs-handle">
+    <div class="bs-handle" id="sheetHandle">
       <div class="bs-drag"></div>
       <div class="bs-title">현재 화면 Top 20</div>
       <div id="bsCount" class="bs-count">0개</div>
@@ -206,9 +211,22 @@
     <div id="bsList" class="bs-content"></div>
   </div>
 
-  <!-- 모바일: FAB 2개 -->
-  <button id="fabLocate" class="fab" title="현재 위치" style="display:none">📍</button>
-  <button id="fabShare"  class="fab" title="공유"     style="display:none">🔗</button>
+  <!-- 모바일: FAB 2개 (화이트+2D 아이콘) -->
+  <button id="fabLocate" class="fab" title="현재 위치" style="display:none" aria-label="현재 위치">
+    <!-- 조준 아이콘 -->
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3"></circle>
+      <path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path>
+      <circle cx="12" cy="12" r="9" stroke-opacity=".25"></circle>
+    </svg>
+  </button>
+  <button id="fabShare"  class="fab" title="공유" style="display:none" aria-label="공유">
+    <!-- 링크 아이콘 -->
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M10 13a5 5 0 0 1 0-7l1.6-1.6a5 5 0 0 1 7 7L17 12"></path>
+      <path d="M14 11a5 5 0 0 1 0 7L12.4 19.6a5 5 0 1 1-7-7L7 12"></path>
+    </svg>
+  </button>
 
   <script>
     kakao.maps.load(function(){
@@ -501,12 +519,13 @@
         }
       });
 
-      /* ===== 모바일 전용: 표시/토글/바텀시트 ===== */
+      /* ===== 모바일 전용: 표시/토글/바텀시트 & 드래그 제스처 ===== */
       function syncMobileVisibility(){
         const isMobile = window.matchMedia('(max-width:768px)').matches;
         document.getElementById('fabLocate').style.display = isMobile ? 'flex' : 'none';
         document.getElementById('fabShare').style.display  = isMobile ? 'flex' : 'none';
         document.getElementById('btnGuide').style.display  = isMobile ? 'inline-flex' : 'none';
+        adjustFabForSheet(); // 리사이즈 시 FAB 위치 재계산
       }
       syncMobileVisibility();
       window.addEventListener('resize', syncMobileVisibility);
@@ -515,7 +534,75 @@
       document.getElementById('btnGuide').addEventListener('click', ()=> guide.classList.toggle('open'));
 
       const sheet = document.getElementById('sheet');
-      sheet.querySelector('.bs-handle').addEventListener('click', ()=> sheet.classList.toggle('open'));
+      const sheetHandle = document.getElementById('sheetHandle');
+      const SHEET_COLLAPSED = 56;  // 핸들 높이
+      let isDragging = false;
+      let dragStartY = 0;
+      let startTranslateY = 0;
+
+      function getSheetTop(){ return sheet.getBoundingClientRect().top; }
+      function setSheetTranslate(y){ sheet.style.transform = `translateY(${y}px)`; adjustFabForSheet(); }
+      function sheetOpen(){ sheet.classList.add('open'); setSheetTranslate(0); adjustFabForSheet(); }
+      function sheetClose(){
+        sheet.classList.remove('open');
+        const maxY = window.innerHeight - SHEET_COLLAPSED;
+        setSheetTranslate(maxY);
+        adjustFabForSheet();
+      }
+
+      // 초기 위치(닫힘 상태)
+      sheetClose();
+
+      // 핸들 탭으로 토글 (편의)
+      sheetHandle.addEventListener('click', (e)=>{
+        if (isDragging) return; // 드래그 종료 클릭 무시
+        if (sheet.classList.contains('open')) sheetClose(); else sheetOpen();
+      });
+
+      // 드래그 제스처 (핸들에서만)
+      sheetHandle.addEventListener('touchstart', (e)=>{
+        isDragging = true;
+        dragStartY = e.touches[0].clientY;
+        const currentTop = getSheetTop();
+        startTranslateY = currentTop; // 현재 top이 곧 translateY(px)
+        sheet.style.transition = 'none';
+      }, {passive:true});
+
+      sheetHandle.addEventListener('touchmove', (e)=>{
+        if (!isDragging) return;
+        const dy = e.touches[0].clientY - dragStartY;
+        let next = startTranslateY + dy;
+        const minY = 0;
+        const maxY = window.innerHeight - SHEET_COLLAPSED;
+        if (next < minY) next = minY;
+        if (next > maxY) next = maxY;
+        setSheetTranslate(next);
+      }, {passive:true});
+
+      sheetHandle.addEventListener('touchend', ()=>{
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.style.transition = ''; // 원래 전환 복원
+        // 열린 비율 기준으로 스냅
+        const threshold = (window.innerHeight - SHEET_COLLAPSED) * 0.4;
+        const current = getSheetTop();
+        if (current <= threshold) sheetOpen(); else sheetClose();
+      });
+
+      // FAB를 시트 상단에 맞춰 이동
+      function adjustFabForSheet(){
+        // 시트 상단으로부터 FAB 바닥 여백 계산
+        const top = getSheetTop();
+        const rise = Math.max(0, window.innerHeight - top); // 바텀에서 올라온 높이
+        const base = 88; // 기본 바닥 여백
+        const gap = 12;  // 시트 위와의 간격
+        const bottom = Math.max(base, rise + gap);
+
+        const loc = document.getElementById('fabLocate');
+        const shr = document.getElementById('fabShare');
+        loc.style.bottom = bottom + 'px';
+        shr.style.bottom = bottom + 'px';
+      }
 
       function renderTop20ToSheet(items){
         const list = document.getElementById('bsList');
@@ -535,10 +622,11 @@
             map.panTo(o.pos);
             infowindow.setContent(popupHtml(p));
             infowindow.open(map, o.marker);
-            sheet.classList.add('open');
+            sheetOpen();
           });
           list.appendChild(el);
         });
+        adjustFabForSheet();
       }
 
       // 모바일 FAB → 기존 버튼 클릭 재사용
