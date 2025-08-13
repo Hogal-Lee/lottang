@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>LoTTang - 로또 명당 (Kakao Map)</title>
+  <!-- Kakao Maps JS SDK: JavaScript 키 + clusterer -->
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ca26f9ae7a3d87a3526307104203c1a0&autoload=false&libraries=clusterer"></script>
+  <style>
+    html,body,#map{height:100%;margin:0}
+    *{box-sizing:border-box}
+
+    /* 상단 툴바 고정 */
+    .ui{
+      position: fixed; top:10px; left:10px; right:350px;
+      max-width:1100px; margin:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+      background:#ffffffE6; backdrop-filter:blur(6px);
+      border:1px solid #e5e7eb; border-radius:12px; padding:10px;
+      box-shadow:0 6px 18px rgba(0,0,0,.15); font-family:system-ui,Apple SD Gothic Neo,sans-serif;
+      z-index:1000
+    }
+    .ui input[type="text"]{flex:1;min-width:220px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px}
+    .ui select,.ui input[type="range"]{padding:8px;border:1px solid #e5e7eb;border-radius:8px}
+    .ui label{display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap}
+    .btn{padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;background:#fafafa;cursor:pointer}
+    .btn:hover{background:#f0f0f0}
+    .badge{padding:4px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px}
+
+    /* 상태 패널 */
+    .panel{
+      position: fixed; top:74px; left:10px; background:#fff; padding:6px 10px;
+      border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.15); z-index:1000;
+      font-family:system-ui,Apple SD Gothic Neo,sans-serif
+    }
+
+    /* 왼쪽 점수 가이드 + 고지 */
+    .score-guide{
+      position: fixed; top:120px; left:10px; width:260px; max-height:calc(100% - 140px); overflow:auto;
+      background:#fff; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,.15);
+      z-index:1000; font-family:system-ui,Apple SD Gothic Neo,sans-serif; padding:12px;
+    }
+    .score-guide h3{margin:0 0 8px 0; font-size:14px; font-weight:700;}
+    .score-guide .row{display:flex; align-items:center; gap:8px; padding:6px 4px; border:1px solid #f1f5f9; border-radius:10px; margin-bottom:6px; justify-content:space-between;}
+    .score-guide .left{display:flex; align-items:center; gap:8px}
+    .score-guide .chip{ width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1px #e5e7eb inset; }
+    .score-guide .label{ font-size:13px; color:#111; }
+    .score-guide .cnt{ font-size:12px; color:#111; background:#f3f4f6; border-radius:999px; padding:2px 8px }
+    .score-guide .desc{ font-size:12px; color:#6b7280; line-height:1.5; margin-top:8px; }
+    .score-guide .tip{ font-size:11px; color:#94a3b8; margin-top:6px; }
+
+    /* 법적 고지문 */
+    .legal{
+      margin-top:10px; padding:10px; border:1px dashed #e5e7eb; border-radius:10px; background:#fafafa;
+      font-size:11px; color:#374151; line-height:1.55;
+    }
+    .legal b{color:#111}
+    .legal .muted{color:#6b7280}
+
+    /* 오른쪽 Top 20 사이드바 */
+    .sidebar{
+      position: fixed; top:10px; right:10px; bottom:10px; width:320px;
+      background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+      box-shadow:0 6px 18px rgba(0,0,0,.15); z-index:1000; display:flex; flex-direction:column;
+      font-family:system-ui,Apple SD Gothic Neo,sans-serif; overflow:hidden
+    }
+    .sidebar-header{padding:10px 12px; border-bottom:1px solid #eef; display:flex; justify-content:space-between; align-items:center}
+    .sidebar-list{overflow:auto; padding:6px}
+    .item{padding:10px; border:1px solid #eef; border-radius:10px; margin:6px 0; cursor:pointer; display:flex; flex-direction:column; gap:4px}
+    .item:hover{background:#fafafa}
+    .item .name{font-weight:600}
+    .item .addr{font-size:12px; color:#374151}
+    .item .meta{font-size:12px; color:#111; display:flex; gap:8px}
+    .empty{padding:16px; color:#6b7280; font-size:14px}
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- 상단 툴바 -->
+  <div class="ui">
+    <input id="q" type="text" placeholder="상호 또는 주소 검색 (예: 복권, 강남구, 도봉구)">
+    <select id="gu">
+      <option value="">전체</option>
+      <option>강남구</option>
+      <option>도봉구</option>
+    </select>
+    <label><input id="only1st" type="checkbox"> 1등 보유점만</label>
+    <label style="gap:10px">최소 점수
+      <input id="minScore" type="range" min="0" max="20" step="0.5" value="0">
+      <span id="minScoreVal" class="badge">0.0</span>
+    </label>
+    <button id="fit" class="btn">범위 맞추기</button>
+    <button id="locate" class="btn">현재 위치</button>
+    <span id="count" class="badge">0개</span>
+  </div>
+
+  <!-- 상태 패널 -->
+  <div class="panel">로딩 중…</div>
+
+  <!-- 왼쪽 점수 가이드 + 고지 -->
+  <aside class="score-guide">
+    <h3>점수 색상 가이드</h3>
+    <div class="row"><div class="left"><span class="chip" style="background:#9CA3AF"></span><div class="label">0 ≤ s &lt; 2</div></div><div id="cnt0to2" class="cnt">0</div></div>
+    <div class="row"><div class="left"><span class="chip" style="background:#60A5FA"></span><div class="label">2 ≤ s &lt; 5</div></div><div id="cnt2to5" class="cnt">0</div></div>
+    <div class="row"><div class="left"><span class="chip" style="background:#2563EB"></span><div class="label">5 ≤ s &lt; 10</div></div><div id="cnt5to10" class="cnt">0</div></div>
+    <div class="row"><div class="left"><span class="chip" style="background:#7C3AED"></span><div class="label">10 ≤ s &lt; 15</div></div><div id="cnt10to15" class="cnt">0</div></div>
+    <div class="row"><div class="left"><span class="chip" style="background:#DC2626"></span><div class="label">15 ≤ s</div></div><div id="cnt15" class="cnt">0</div></div>
+
+    <div class="desc">
+      <b>점수 = (5×1등 + 1×2등) × 최근가중</b><br/>
+      최근가중(반감 12개월) = <code>0.5^(경과개월/12)</code>
+    </div>
+    <div class="tip">* 상단 검색/필터가 적용된 결과 기준으로 집계됩니다.</div>
+
+    <!-- ✅ 법적 고지문 -->
+    <div class="legal">
+      <b>법적 고지</b><br/>
+      · 복권은 <b>만 19세 미만 판매·구매 불가</b>이며, 미성년자의 복권 구매 및 당첨금 지급은 제한됩니다.<br/>
+      · <b>과도한 구매는 위험</b>할 수 있습니다. 도움이 필요하시면 <b>도박중독 상담전화 1336</b> (24시간) 이용 바랍니다.<br/>
+      · 당첨 확률은 각 회차마다 <b>동일</b>하며, 과거 실적이 미래 결과를 보장하지 않습니다.<br/>
+      · 본 서비스는 <span class="muted">비영리 MVP</span>로 공개 자료를 가공·시각화하며, <b>데이터 오류/지연</b>이 있을 수 있습니다. 공식 정보는 <b>동행복권</b>을 확인하세요.<br/>
+      · 현재 위치는 <span class="muted">브라우저 내 일시 사용</span>되며, 서버에 저장하지 않습니다.
+    </div>
+  </aside>
+
+  <!-- 오른쪽 Top 20 사이드바 -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div><b>현재 화면 Top 20</b></div>
+      <div id="sidebarCount" class="badge">0개</div>
+    </div>
+    <div id="sidebarList" class="sidebar-list"></div>
+  </aside>
+
+  <script>
+    kakao.maps.load(function(){
+      const map = new kakao.maps.Map(document.getElementById('map'), {
+        center: new kakao.maps.LatLng(37.5665, 126.9780), level: 6
+      });
+
+      // 전역 인포윈도우 + 빈공간 클릭 시 닫기
+      const infowindow = new kakao.maps.InfoWindow({ zIndex: 10 });
+      kakao.maps.event.addListener(map, 'click', () => infowindow.close());
+
+      const panel = document.querySelector('.panel');
+      const countEl = document.getElementById('count');
+      const qEl = document.getElementById('q');
+      const guEl = document.getElementById('gu');
+      const only1stEl = document.getElementById('only1st');
+      const minScoreEl = document.getElementById('minScore');
+      const minScoreVal = document.getElementById('minScoreVal');
+      const fitBtn = document.getElementById('fit');
+      const locateBtn = document.getElementById('locate');
+
+      const sidebarList = document.getElementById('sidebarList');
+      const sidebarCount = document.getElementById('sidebarCount');
+
+      // 좌측 색 구간 카운트 요소
+      const cnt0to2   = document.getElementById('cnt0to2');
+      const cnt2to5   = document.getElementById('cnt2to5');
+      const cnt5to10  = document.getElementById('cnt5to10');
+      const cnt10to15 = document.getElementById('cnt10to15');
+      const cnt15     = document.getElementById('cnt15');
+
+      let features = [];
+      let markerObjs = [];  // { marker, pos, props }
+      const clusterer = new kakao.maps.MarkerClusterer({
+        map, averageCenter:true, minLevel:7, disableClickZoom:false
+      });
+
+      // 현재 위치 마커/정확도 원
+      let meMarker = null, meCircle = null;
+
+      function colorFor(score){
+        if (score >= 15) return '#DC2626';
+        if (score >= 10) return '#7C3AED';
+        if (score >= 5)  return '#2563EB';
+        if (score >= 2)  return '#60A5FA';
+        return '#9CA3AF';
+      }
+      function markerImage(color){
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+          <circle cx="10" cy="10" r="7" fill="${color}" stroke="white" stroke-width="2"/></svg>`;
+        const url = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+        return new kakao.maps.MarkerImage(url, new kakao.maps.Size(20,20), {offset:new kakao.maps.Point(10,10)});
+      }
+      function popupHtml(p){
+        return `
+          <div style="padding:8px;line-height:1.5;min-width:220px">
+            <div style="font-weight:600">${p.name||''}</div>
+            <div style="color:#374151">${p.address||''}</div>
+            <div style="margin-top:6px;font-size:13px;color:#111">
+              1등: <b>${p.win1 ?? 0}</b> | 2등: <b>${p.win2 ?? 0}</b> | 점수: <b>${p.score ?? 0}</b>
+            </div>
+          </div>`;
+      }
+      function debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
+
+      function applyFilters(){
+        const kw = qEl.value.trim();
+        const gu = guEl.value;
+        const only1st = only1stEl.checked;
+        const minScore = parseFloat(minScoreEl.value || '0');
+        minScoreVal.textContent = minScore.toFixed(1);
+
+        clusterer.clear();
+        markerObjs.forEach(o => o.marker.setMap(null));
+        markerObjs = [];
+
+        const filtered = features.filter(f => {
+          const p = f.properties || {};
+          const name = (p.name||'') + '';
+          const addr = (p.address||'') + '';
+          const score = parseFloat(p.score || '0');
+          const win1 = parseInt(p.win1 || '0', 10);
+
+          if (kw && !(name.includes(kw) || addr.includes(kw))) return false;
+          if (gu && !addr.includes(gu)) return false;
+          if (only1st && win1 <= 0) return false;
+          if (score < minScore) return false;
+          return true;
+        });
+
+        const newMarkers = filtered.map(f => {
+          const [lon, lat] = f.geometry.coordinates;
+          const p = f.properties || {};
+          const pos = new kakao.maps.LatLng(lat, lon);
+          const img = markerImage(colorFor(parseFloat(p.score||'0')));
+
+        const marker = new kakao.maps.Marker({ position: pos, image: img });
+          kakao.maps.event.addListener(marker, 'click', () => {
+            infowindow.setContent(popupHtml(p));
+            infowindow.open(map, marker);
+          });
+
+          const obj = { marker, pos, props: p };
+          markerObjs.push(obj);
+          return marker;
+        });
+
+        clusterer.addMarkers(newMarkers);
+        countEl.textContent = `${filtered.length}개`;
+        panel.textContent = `매장 ${features.length}개 로드됨`;
+
+        updateSidebar();     // Top20 갱신
+        updateGuideCounts(); // 색 구간 카운트 갱신
+        return filtered;
+      }
+
+      function fitToMarkers(list){
+        const ms = (list && list.length) ? list : markerObjs.map(o=>o.marker);
+        if (!ms.length) return;
+        const bounds = new kakao.maps.LatLngBounds();
+        ms.forEach(m => bounds.extend(m.getPosition()));
+        map.setBounds(bounds, 20, 20, 20, 20);
+      }
+
+      // 현재 화면 Top 20
+      function updateSidebar(){
+        const bounds = map.getBounds();
+        const visible = markerObjs.filter(o => bounds.contain(o.pos));
+        const top = visible
+          .sort((a,b)=> (parseFloat(b.props.score||0)-parseFloat(a.props.score||0)) || (''+a.props.name).localeCompare(''+b.props.name))
+          .slice(0,20);
+
+        sidebarCount.textContent = `${top.length}개`;
+        sidebarList.innerHTML = top.length ? '' : `<div class="empty">현재 화면에 보이는 매장이 없습니다.<br/>줌/이동하거나 필터를 조정해보세요.</div>`;
+
+        top.forEach((o, idx) => {
+          const p = o.props;
+          const el = document.createElement('div');
+          el.className = 'item';
+          el.innerHTML = `
+            <div class="name">${idx+1}. ${p.name||''}</div>
+            <div class="addr">${p.address||''}</div>
+            <div class="meta">1등 ${p.win1??0} · 2등 ${p.win2??0} · 점수 ${p.score??0}</div>
+          `;
+          el.addEventListener('click', ()=>{
+            map.panTo(o.pos);
+            infowindow.setContent(popupHtml(p));
+            infowindow.open(map, o.marker);
+          });
+          sidebarList.appendChild(el);
+        });
+      }
+
+      // 현재 화면(바운즈) 내 색 구간 카운트
+      function updateGuideCounts(){
+        const bounds = map.getBounds();
+        let c0=0, c2=0, c5=0, c10=0, c15=0;
+        markerObjs.forEach(o=>{
+          if (!bounds.contain(o.pos)) return;
+          const s = parseFloat(o.props.score || '0');
+          if (s >= 15) c15++;
+          else if (s >= 10) c10++;
+          else if (s >= 5) c5++;
+          else if (s >= 2) c2++;
+          else c0++;
+        });
+        cnt0to2.textContent   = c0;
+        cnt2to5.textContent   = c2;
+        cnt5to10.textContent  = c5;
+        cnt10to15.textContent = c10;
+        cnt15.textContent     = c15;
+      }
+
+      // 지도 이동/줌 변화 끝날 때 갱신
+      kakao.maps.event.addListener(map, 'idle', debounce(() => {
+        updateSidebar();
+        updateGuideCounts();
+      }, 150));
+
+      // 컨트롤 이벤트
+      qEl.addEventListener('input', debounce(()=>{ applyFilters(); fitToMarkers(); }, 250));
+      guEl.addEventListener('change', ()=>{ applyFilters(); fitToMarkers(); });
+      only1stEl.addEventListener('change', ()=>{ applyFilters(); fitToMarkers(); });
+      minScoreEl.addEventListener('input', ()=>applyFilters());
+      fitBtn.addEventListener('click', ()=>fitToMarkers());
+
+      // 현재 위치 버튼
+      locateBtn.addEventListener('click', () => {
+        if (!navigator.geolocation){
+          panel.textContent = '현재 위치: 이 브라우저에서 지원되지 않습니다.';
+          return;
+        }
+        panel.textContent = '현재 위치 확인 중…';
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude, lon = pos.coords.longitude, acc = pos.coords.accuracy || 100;
+            const here = new kakao.maps.LatLng(lat, lon);
+            map.panTo(here);
+            map.setLevel(4);
+
+            // 기존 표시 제거
+            if (meMarker) meMarker.setMap(null);
+            if (meCircle) meCircle.setMap(null);
+
+            // 파란 점 마커
+            const dot = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
+              `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+                 <circle cx="10" cy="10" r="6" fill="#2563EB" stroke="white" stroke-width="2"/></svg>`
+            );
+            meMarker = new kakao.maps.Marker({
+              position: here,
+              image: new kakao.maps.MarkerImage(dot, new kakao.maps.Size(20,20), {offset:new kakao.maps.Point(10,10)}),
+              map
+            });
+            // 정확도 원
+            meCircle = new kakao.maps.Circle({
+              center: here, radius: Math.min(Math.max(acc, 30), 500),
+              strokeWeight: 1, strokeColor: '#2563EB', strokeOpacity: 0.7, strokeStyle: 'shortdash',
+              fillColor: '#60A5FA', fillOpacity: 0.2
+            });
+            meCircle.setMap(map);
+
+            panel.textContent = `현재 위치 표시 (정확도 ±${Math.round(acc)}m)`;
+          },
+          (err) => {
+            const msg = {1:'위치 권한이 거부되었습니다.', 2:'위치를 확인할 수 없습니다.', 3:'요청이 시간 초과되었습니다.'}[err.code] || '위치 확인 실패';
+            panel.textContent = '현재 위치: ' + msg;
+          },
+          { enableHighAccuracy:true, timeout:7000, maximumAge:0 }
+        );
+      });
+
+      // 데이터 로드
+      fetch('./data/stores_clean.geojson')
+        .then(res => { if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); })
+        .then(geo => {
+          features = geo.features || [];
+          panel.textContent = `매장 ${features.length}개 로드됨`;
+          applyFilters();
+          fitToMarkers();
+        })
+        .catch(err => {
+          panel.textContent = '데이터 로드 실패: ' + err.message;
+          console.error(err);
+        });
+    });
+  </script>
+</body>
+</html>
