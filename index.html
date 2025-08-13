@@ -18,131 +18,66 @@
   <style>
     html,body,#map{height:100%;margin:0}
     *{box-sizing:border-box}
-    :root{
-      --bg:#fff; --border:#e5e7eb; --muted:#6b7280; --ink:#111;
-      --brand:#2563EB; --brand-soft:#eef2ff; --shadow:0 6px 18px rgba(0,0,0,.15);
-    }
-
-    /* 상단 툴바 */
-    .ui{
-      position: fixed; top:10px; left:10px; right:360px;
-      max-width:1100px; margin:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
-      background:#ffffffE6; backdrop-filter:blur(6px);
-      border:1px solid var(--border); border-radius:12px; padding:10px;
-      box-shadow:var(--shadow); font-family:system-ui,Apple SD Gothic Neo,sans-serif;
-      z-index:1000
-    }
-    .ui input[type="text"]{
-      flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;
-      font-size:16px; /* iOS 자동 확대 방지 */
-      line-height:20px;
-    }
+    :root{--bg:#fff;--border:#e5e7eb;--muted:#6b7280;--ink:#111;--brand:#2563EB;--brand-soft:#eef2ff;--shadow:0 6px 18px rgba(0,0,0,.15)}
+    .ui{position:fixed;top:10px;left:10px;right:360px;max-width:1100px;margin:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#ffffffE6;backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:12px;padding:10px;box-shadow:var(--shadow);font-family:system-ui,Apple SD Gothic Neo,sans-serif;z-index:1000}
+    .ui input[type="text"]{flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:16px;line-height:20px}
     .ui select,.ui input[type="range"]{padding:8px;border:1px solid var(--border);border-radius:8px}
     .ui label{display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap}
     .btn{padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:#fafafa;cursor:pointer}
     .btn:hover{background:#f0f0f0}
     .badge{padding:4px 8px;border-radius:999px;background:var(--brand-soft);color:#3730a3;font-size:12px}
-
-    /* 상태 패널 (축소) */
-    .panel{
-      position: fixed; top:74px; left:10px; background:var(--bg);
-      padding:4px 8px; border-radius:8px; box-shadow:0 3px 9px rgba(0,0,0,.15);
-      z-index:1000; font-family:system-ui,Apple SD Gothic Neo,sans-serif;
-      font-size:12px; opacity:.95
-    }
-
-    /* 왼쪽 점수 가이드 + 법적 고지 */
-    .score-guide{
-      position: fixed; top:120px; left:10px; width:260px; max-height:calc(100% - 140px); overflow:auto;
-      background:var(--bg); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow);
-      z-index:1000; font-family:system-ui,Apple SD Gothic Neo,sans-serif; padding:12px;
-    }
-    .score-guide h3{margin:0 0 8px 0; font-size:14px; font-weight:700;}
-    .score-guide .row{display:flex; align-items:center; gap:8px; padding:6px 4px; border:1px solid #f1f5f9; border-radius:10px; margin-bottom:6px; justify-content:space-between;}
-    .score-guide .left{display:flex; align-items:center; gap:8px}
-    .score-guide .chip{ width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1px var(--border) inset; }
-    .score-guide .label{ font-size:13px; color:var(--ink); }
-    .score-guide .cnt{ font-size:12px; color:var(--ink); background:#f3f4f6; border-radius:999px; padding:2px 8px }
-    .score-guide .desc{ font-size:12px; color:#6b7280; line-height:1.5; margin-top:8px; }
-    .score-guide .tip{ font-size:11px; color:#94a3b8; margin-top:6px; }
-    .legal{
-      margin-top:10px; padding:10px; border:1px dashed var(--border); border-radius:10px; background:#fafafa;
-      font-size:11px; color:#374151; line-height:1.55;
-    }
-    .legal b{color:var(--ink)}
-    .legal .muted{color:var(--muted)}
-
-    /* 오른쪽 Top 20 사이드바 (데스크탑) */
-    .sidebar{
-      position: fixed; top:10px; right:10px; bottom:10px; width:340px;
-      background:var(--bg); border:1px solid var(--border); border-radius:12px;
-      box-shadow:var(--shadow); z-index:1000; display:flex; flex-direction:column;
-      font-family:system-ui,Apple SD Gothic Neo,sans-serif; overflow:hidden
-    }
-    .sidebar-header{
-      padding:10px 12px; border-bottom:1px solid #eef; display:flex; justify-content:space-between; align-items:center; gap:8px
-    }
-    .sidebar-list{overflow:auto; padding:6px}
-    .item{padding:10px; border:1px solid #eef; border-radius:10px; margin:6px 0; cursor:pointer; display:flex; flex-direction:column; gap:4px}
+    .panel{position:fixed;top:74px;left:10px;background:var(--bg);padding:4px 8px;border-radius:8px;box-shadow:0 3px 9px rgba(0,0,0,.15);z-index:1000;font-family:system-ui,Apple SD Gothic Neo,sans-serif;font-size:12px;opacity:.95}
+    .score-guide{position:fixed;top:120px;left:10px;width:260px;max-height:calc(100% - 140px);overflow:auto;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);z-index:1000;font-family:system-ui,Apple SD Gothic Neo,sans-serif;padding:12px}
+    .score-guide h3{margin:0 0 8px 0;font-size:14px;font-weight:700}
+    .score-guide .row{display:flex;align-items:center;gap:8px;padding:6px 4px;border:1px solid #f1f5f9;border-radius:10px;margin-bottom:6px;justify-content:space-between}
+    .score-guide .left{display:flex;align-items:center;gap:8px}
+    .score-guide .chip{width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--border) inset}
+    .score-guide .label{font-size:13px;color:var(--ink)}
+    .score-guide .cnt{font-size:12px;color:var(--ink);background:#f3f4f6;border-radius:999px;padding:2px 8px}
+    .score-guide .desc{font-size:12px;color:#6b7280;line-height:1.5;margin-top:8px}
+    .score-guide .tip{font-size:11px;color:#94a3b8;margin-top:6px}
+    .legal{margin-top:10px;padding:10px;border:1px dashed var(--border);border-radius:10px;background:#fafafa;font-size:11px;color:#374151;line-height:1.55}
+    .sidebar{position:fixed;top:10px;right:10px;bottom:10px;width:340px;background:var(--bg);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);z-index:1000;display:flex;flex-direction:column;font-family:system-ui,Apple SD Gothic Neo,sans-serif;overflow:hidden}
+    .sidebar-header{padding:10px 12px;border-bottom:1px solid #eef;display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .sidebar-list{overflow:auto;padding:6px}
+    .item{padding:10px;border:1px solid #eef;border-radius:10px;margin:6px 0;cursor:pointer;display:flex;flex-direction:column;gap:4px}
     .item:hover{background:#fafafa}
     .item .name{font-weight:600}
-    .item .addr{font-size:12px; color:#374151}
-    .item .meta{font-size:12px; color:#111; display:flex; gap:8px}
-    .empty{padding:16px; color:#6b7280; font-size:14px}
+    .item .addr{font-size:12px;color:#374151}
+    .item .meta{font-size:12px;color:#111;display:flex;gap:8px}
+    .empty{padding:16px;color:#6b7280;font-size:14px}
 
-    /* 공통 FAB (화이트 배경 + 2D 아이콘) */
-    .fab{
-      position:fixed; z-index:1001; width:48px; height:48px; border-radius:50%;
-      display:flex; align-items:center; justify-content:center; background:#fff; color:var(--brand);
-      box-shadow:0 10px 24px rgba(0,0,0,.25); border:1px solid var(--border); cursor:pointer
-    }
+    .fab{position:fixed;z-index:1001;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#fff;color:var(--brand);box-shadow:0 10px 24px rgba(0,0,0,.25);border:1px solid var(--border);cursor:pointer}
     .fab svg{width:22px;height:22px}
     .fab:active{transform:translateY(1px)}
 
-    /* 모바일 전용 */
     .bottom-sheet{display:none}
     #btnGuide{display:none}
 
-    @media (max-width: 768px){
-      .ui{left:10px; right:10px; gap:6px; padding:8px}
-      .ui select, .ui label, #fit, #share{display:none} /* 필터/범위맞추기/공유는 모바일 UI로 이동 */
-      .score-guide{left:10px; width:86vw; max-height:60vh; display:none}
+    @media (max-width:768px){
+      .ui{left:10px;right:10px;gap:6px;padding:8px}
+      .ui select,.ui label,#fit,#share{display:none}
+      .score-guide{left:10px;width:86vw;max-height:60vh;display:none}
       .score-guide.open{display:block}
-
-      .sidebar{display:none} /* 데스크탑 사이드바 숨김 → 바텀시트 사용 */
-
-      .bottom-sheet{
-        display:block; position:fixed; left:0; right:0; bottom:0; z-index:1000;
-        background:#fff; border-radius:16px 16px 0 0; box-shadow:0 -8px 24px rgba(0,0,0,.25);
-        transform:translateY(calc(100% - 56px)); transition:.25s ease;
-        will-change: transform;
-      }
+      .sidebar{display:none}
+      .bottom-sheet{display:block;position:fixed;left:0;right:0;bottom:0;z-index:1000;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.25);transform:translateY(calc(100% - 56px));transition:.25s ease;will-change:transform}
       .bottom-sheet.open{transform:translateY(0)}
-      .bs-handle{height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; touch-action:none;}
-      .bs-drag{width:40px; height:4px; background:#e5e7eb; border-radius:4px; margin:0 auto}
+      .bs-handle{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;touch-action:none}
+      .bs-drag{width:40px;height:4px;background:#e5e7eb;border-radius:4px;margin:0 auto}
       .bs-title{font-weight:700}
-      .bs-content{max-height:45vh; overflow:auto; padding:8px 8px 12px}
-
-      /* FABs: 기본 위치는 88px, 바텀시트 열리면 JS가 자동 조정 */
-      #fabLocate{left:12px; bottom:88px}
-      #fabShare{right:12px; bottom:88px}
-
-      /* 가이드 토글 버튼 */
-      #btnGuide{position:fixed; left:12px; bottom:148px; z-index:1001; display:inline-flex}
+      .bs-content{max-height:45vh;overflow:auto;padding:8px 8px 12px}
+      #fabLocate{left:12px;bottom:88px}
+      #fabShare{right:12px;bottom:88px}
+      #btnGuide{position:fixed;left:12px;bottom:148px;z-index:1001;display:inline-flex}
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
 
-  <!-- 상단 툴바 -->
   <div class="ui">
     <input id="q" type="text" placeholder="상호 또는 주소 검색 (예: 복권, 강남구, 도봉구)">
-    <select id="gu">
-      <option value="">전체</option>
-      <option>강남구</option>
-      <option>도봉구</option>
-    </select>
+    <select id="gu"><option value="">전체</option><option>강남구</option><option>도봉구</option></select>
     <label><input id="only1st" type="checkbox"> 1등 보유점만</label>
     <label style="gap:10px">최소 점수
       <input id="minScore" type="range" min="0" max="20" step="0.5" value="0">
@@ -154,10 +89,8 @@
     <span id="count" class="badge">0개</span>
   </div>
 
-  <!-- 상태 패널(축소) -->
   <div class="panel">로딩 중…</div>
 
-  <!-- 왼쪽 점수 가이드 + 법적 고지 -->
   <aside class="score-guide">
     <h3>점수 색상 가이드</h3>
     <div class="row"><div class="left"><span class="chip" style="background:#9CA3AF"></span><div class="label">0 ≤ s &lt; 2</div></div><div id="cnt0to2" class="cnt">0</div></div>
@@ -165,43 +98,26 @@
     <div class="row"><div class="left"><span class="chip" style="background:#2563EB"></span><div class="label">5 ≤ s &lt; 10</div></div><div id="cnt5to10" class="cnt">0</div></div>
     <div class="row"><div class="left"><span class="chip" style="background:#7C3AED"></span><div class="label">10 ≤ s &lt; 15</div></div><div id="cnt10to15" class="cnt">0</div></div>
     <div class="row"><div class="left"><span class="chip" style="background:#DC2626"></span><div class="label">15 ≤ s</div></div><div id="cnt15" class="cnt">0</div></div>
-
-    <div class="desc">
-      <b>점수 = (5×1등 + 1×2등) × 최근가중</b><br/>
-      최근가중(반감 12개월) = <code>0.5^(경과개월/12)</code>
-    </div>
+    <div class="desc"><b>점수 = (5×1등 + 1×2등) × 최근가중</b><br/>최근가중(반감 12개월) = <code>0.5^(경과개월/12)</code></div>
     <div class="tip">* 상단 검색/필터가 적용된 결과 기준으로 집계됩니다.</div>
-
     <div class="legal">
-      <b>법적 고지</b><br/>
-      · 복권은 <b>만 19세 미만 판매·구매 불가</b>입니다. 미성년자의 복권 구매 및 당첨금 지급은 제한됩니다.<br/>
-      · <b>과도한 구매는 위험</b>할 수 있습니다. 도움이 필요하시면 <b>도박중독 상담전화 1336</b>(24시간)을 이용하세요.<br/>
-      · 당첨 확률은 각 회차마다 <b>동일</b>하며, 과거 실적이 미래 결과를 보장하지 않습니다.<br/>
-      · 본 서비스는 <span class="muted">비영리 MVP</span>로 공개 자료를 가공·시각화하며, <b>데이터 오류/지연</b>이 있을 수 있습니다. 공식 정보는 <b>동행복권</b>을 확인하세요.<br/>
-      · 현재 위치는 <span class="muted">브라우저 내 일시 사용</span>되며, 서버에 저장하지 않습니다.
+      <b>법적 고지</b><br/>· 복권은 <b>만 19세 미만 판매·구매 불가</b>입니다. 미성년자의 복권 구매 및 당첨금 지급은 제한됩니다.<br/>· <b>과도한 구매는 위험</b>할 수 있습니다. 도움이 필요하시면 <b>도박중독 상담전화 1336</b>(24시간)을 이용하세요.<br/>· 당첨 확률은 각 회차마다 <b>동일</b>하며, 과거 실적이 미래 결과를 보장하지 않습니다.<br/>· 본 서비스는 <span class="muted">비영리 MVP</span>로 공개 자료를 가공·시각화하며, <b>데이터 오류/지연</b>이 있을 수 있습니다. 공식 정보는 <b>동행복권</b>을 확인하세요.<br/>· 현재 위치는 <span class="muted">브라우저 내 일시 사용</span>되며, 서버에 저장하지 않습니다.
     </div>
   </aside>
 
-  <!-- 데스크탑 오른쪽 Top20 -->
   <aside class="sidebar">
     <div class="sidebar-header">
       <div style="display:flex;align-items:center;gap:8px">
         <b>현재 화면 Top 20</b>
-        <select id="sortKey">
-          <option value="score">점수 순</option>
-          <option value="win1">1등 수</option>
-          <option value="win2">2등 수</option>
-        </select>
+        <select id="sortKey"><option value="score">점수 순</option><option value="win1">1등 수</option><option value="win2">2등 수</option></select>
       </div>
       <div id="sidebarCount" class="badge">0개</div>
     </div>
     <div id="sidebarList" class="sidebar-list"></div>
   </aside>
 
-  <!-- 모바일: 가이드 열기 버튼 -->
   <button id="btnGuide" class="btn">가이드</button>
 
-  <!-- 모바일: 바텀시트 Top20 -->
   <div id="sheet" class="bottom-sheet">
     <div class="bs-handle" id="sheetHandle">
       <div class="bs-drag"></div>
@@ -211,17 +127,14 @@
     <div id="bsList" class="bs-content"></div>
   </div>
 
-  <!-- 모바일: FAB 2개 (화이트+2D 아이콘) -->
   <button id="fabLocate" class="fab" title="현재 위치" style="display:none" aria-label="현재 위치">
-    <!-- 조준 아이콘 -->
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="12" cy="12" r="3"></circle>
       <path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path>
       <circle cx="12" cy="12" r="9" stroke-opacity=".25"></circle>
     </svg>
   </button>
-  <button id="fabShare"  class="fab" title="공유" style="display:none" aria-label="공유">
-    <!-- 링크 아이콘 -->
+  <button id="fabShare" class="fab" title="공유" style="display:none" aria-label="공유">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M10 13a5 5 0 0 1 0-7l1.6-1.6a5 5 0 0 1 7 7L17 12"></path>
       <path d="M14 11a5 5 0 0 1 0 7L12.4 19.6a5 5 0 1 1-7-7L7 12"></path>
@@ -230,423 +143,215 @@
 
   <script>
     kakao.maps.load(function(){
-      const map = new kakao.maps.Map(document.getElementById('map'), {
-        center: new kakao.maps.LatLng(37.5665, 126.9780), level: 6
-      });
+      const map = new kakao.maps.Map(document.getElementById('map'), { center:new kakao.maps.LatLng(37.5665,126.9780), level:6 });
+      const infowindow = new kakao.maps.InfoWindow({ zIndex:10 });
+      kakao.maps.event.addListener(map,'click',()=>infowindow.close());
 
-      // 전역 인포윈도우 + 빈공간 클릭 시 닫기
-      const infowindow = new kakao.maps.InfoWindow({ zIndex: 10 });
-      kakao.maps.event.addListener(map, 'click', () => infowindow.close());
+      const panel=document.querySelector('.panel');
+      const countEl=document.getElementById('count');
+      const qEl=document.getElementById('q');
+      const guEl=document.getElementById('gu');
+      const only1stEl=document.getElementById('only1st');
+      const minScoreEl=document.getElementById('minScore');
+      const minScoreVal=document.getElementById('minScoreVal');
+      const fitBtn=document.getElementById('fit');
+      const locateBtn=document.getElementById('locate');
+      const shareBtn=document.getElementById('share');
+      const sidebarList=document.getElementById('sidebarList');
+      const sidebarCount=document.getElementById('sidebarCount');
+      const sortKeyEl=document.getElementById('sortKey');
 
-      const panel = document.querySelector('.panel');
-      const countEl = document.getElementById('count');
-      const qEl = document.getElementById('q');
-      const guEl = document.getElementById('gu');
-      const only1stEl = document.getElementById('only1st');
-      const minScoreEl = document.getElementById('minScore');
-      const minScoreVal = document.getElementById('minScoreVal');
-      const fitBtn = document.getElementById('fit');
-      const locateBtn = document.getElementById('locate');
-      const shareBtn = document.getElementById('share');
+      const cnt0to2=document.getElementById('cnt0to2');
+      const cnt2to5=document.getElementById('cnt2to5');
+      const cnt5to10=document.getElementById('cnt5to10');
+      const cnt10to15=document.getElementById('cnt10to15');
+      const cnt15=document.getElementById('cnt15');
 
-      const sidebarList = document.getElementById('sidebarList');
-      const sidebarCount = document.getElementById('sidebarCount');
-      const sortKeyEl = document.getElementById('sortKey');
+      let features=[]; let markerObjs=[];
+      const clusterer=new kakao.maps.MarkerClusterer({ map, averageCenter:true, minLevel:7, disableClickZoom:false });
+      let meMarker=null, meCircle=null;
 
-      // 좌측 색 구간 카운트 요소
-      const cnt0to2   = document.getElementById('cnt0to2');
-      const cnt2to5   = document.getElementById('cnt2to5');
-      const cnt5to10  = document.getElementById('cnt5to10');
-      const cnt10to15 = document.getElementById('cnt10to15');
-      const cnt15     = document.getElementById('cnt15');
-
-      let features = [];
-      let markerObjs = [];  // { marker, pos, props }
-      const clusterer = new kakao.maps.MarkerClusterer({
-        map, averageCenter:true, minLevel:7, disableClickZoom:false
-      });
-
-      // 현재 위치 표시
-      let meMarker = null, meCircle = null;
-
-      function colorFor(score){
-        if (score >= 15) return '#DC2626';
-        if (score >= 10) return '#7C3AED';
-        if (score >= 5)  return '#2563EB';
-        if (score >= 2)  return '#60A5FA';
-        return '#9CA3AF';
-      }
+      function colorFor(s){ if(s>=15)return'#DC2626'; if(s>=10)return'#7C3AED'; if(s>=5)return'#2563EB'; if(s>=2)return'#60A5FA'; return'#9CA3AF' }
       function markerImage(color){
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">
-          <circle cx="10" cy="10" r="7" fill="${color}" stroke="white" stroke-width="2"/></svg>`;
-        const url = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
-        return new kakao.maps.MarkerImage(url, new kakao.maps.Size(20,20), {offset:new kakao.maps.Point(10,10)});
+        const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="7" fill="${color}" stroke="white" stroke-width="2"/></svg>`;
+        return new kakao.maps.MarkerImage('data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg), new kakao.maps.Size(20,20), {offset:new kakao.maps.Point(10,10)});
       }
+      function valOr0(v){ return (v===null||v===undefined||isNaN(Number(v)))?0:Number(v); }
       function popupHtml(p){
-        return `
-          <div style="padding:8px;line-height:1.5;min-width:220px">
+        return `<div style="padding:8px;line-height:1.5;min-width:220px">
             <div style="font-weight:600">${p.name||''}</div>
             <div style="color:#374151">${p.address||''}</div>
             <div style="margin-top:6px;font-size:13px;color:#111">
-              1등: <b>${p.win1 ?? 0}</b> | 2등: <b>${p.win2 ?? 0}</b> | 점수: <b>${p.score ?? 0}</b>
-            </div>
-          </div>`;
+              1등: <b>${valOr0(p.win1)}</b> | 2등: <b>${valOr0(p.win2)}</b> | 점수: <b>${valOr0(p.score)}</b>
+            </div></div>`;
       }
-      function debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
+      function debounce(fn,wait){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),wait)}}
 
-      /* ------- 공유(퍼머링크) 상태 직렬화/복원 ------- */
       function serializeState(){
-        const c = map.getCenter();
-        return {
-          lat: c.getLat().toFixed(6),
-          lon: c.getLng().toFixed(6),
-          lvl: map.getLevel(),
-          q: qEl.value.trim(),
-          gu: guEl.value,
-          o1: only1stEl.checked ? 1 : 0,
-          ms: minScoreEl.value,
-          sk: sortKeyEl.value
-        };
+        const c=map.getCenter();
+        return { lat:c.getLat().toFixed(6), lon:c.getLng().toFixed(6), lvl:map.getLevel(),
+          q:qEl.value.trim(), gu:guEl.value, o1:only1stEl.checked?1:0, ms:minScoreEl.value, sk:sortKeyEl.value };
       }
-      function toQuery(s){
-        const u = new URL(window.location.href);
-        Object.entries(s).forEach(([k,v]) => u.searchParams.set(k, v));
-        return u;
-      }
+      function toQuery(s){ const u=new URL(window.location.href); Object.entries(s).forEach(([k,v])=>u.searchParams.set(k,v)); return u; }
       function applyFromQuery(){
-        const sp = new URLSearchParams(location.search);
-        if (sp.has('q'))  qEl.value = sp.get('q');
-        if (sp.has('gu')) guEl.value = sp.get('gu');
-        if (sp.has('o1')) only1stEl.checked = sp.get('o1') === '1';
-        if (sp.has('ms')) minScoreEl.value = sp.get('ms');
-        if (sp.has('sk')) sortKeyEl.value = sp.get('sk');
-        if (sp.has('lat') && sp.has('lon') && sp.has('lvl')){
-          const lat = parseFloat(sp.get('lat')), lon = parseFloat(sp.get('lon')), lvl = parseInt(sp.get('lvl'),10);
-          if (isFinite(lat) && isFinite(lon) && isFinite(lvl)){
-            map.setLevel(lvl);
-            map.setCenter(new kakao.maps.LatLng(lat, lon));
-          }
+        const sp=new URLSearchParams(location.search);
+        if(sp.has('q')) qEl.value=sp.get('q');
+        if(sp.has('gu')) guEl.value=sp.get('gu');
+        if(sp.has('o1')) only1stEl.checked=(sp.get('o1')==='1');
+        if(sp.has('ms')) minScoreEl.value=sp.get('ms');
+        if(sp.has('sk')) sortKeyEl.value=sp.get('sk');
+        if(sp.has('lat')&&sp.has('lon')&&sp.has('lvl')){
+          const lat=parseFloat(sp.get('lat')), lon=parseFloat(sp.get('lon')), lvl=parseInt(sp.get('lvl'),10);
+          if(isFinite(lat)&&isFinite(lon)&&isFinite(lvl)){ map.setLevel(lvl); map.setCenter(new kakao.maps.LatLng(lat,lon)); }
         }
       }
-      function updateUrl(){
-        history.replaceState(null, '', toQuery(serializeState()));
-      }
+      function updateUrl(){ history.replaceState(null,'',toQuery(serializeState())); }
 
       function applyFilters(){
-        const kw = qEl.value.trim();
-        const gu = guEl.value;
-        const only1st = only1stEl.checked;
-        const minScore = parseFloat(minScoreEl.value || '0');
-        minScoreVal.textContent = minScore.toFixed(1);
-
-        clusterer.clear();
-        markerObjs.forEach(o => o.marker.setMap(null));
-        markerObjs = [];
-
-        const filtered = features.filter(f => {
-          const p = f.properties || {};
-          const name = (p.name||'') + '';
-          const addr = (p.address||'') + '';
-          const score = parseFloat(p.score || '0');
-          const win1 = parseInt(p.win1 || '0', 10);
-
-          if (kw && !(name.includes(kw) || addr.includes(kw))) return false;
-          if (gu && !addr.includes(gu)) return false;
-          if (only1st && win1 <= 0) return false;
-          if (score < minScore) return false;
+        const kw=qEl.value.trim(); const gu=guEl.value; const only1st=only1stEl.checked; const minScore=parseFloat(minScoreEl.value||'0');
+        minScoreVal.textContent=minScore.toFixed(1);
+        clusterer.clear(); markerObjs.forEach(o=>o.marker.setMap(null)); markerObjs=[];
+        const filtered=features.filter(f=>{
+          const p=f.properties||{}; const name=(p.name||'')+''; const addr=(p.address||'')+'';
+          const score=parseFloat(p.score||'0'); const win1=parseInt(p.win1||'0',10);
+          if(kw && !(name.includes(kw)||addr.includes(kw))) return false;
+          if(gu && !addr.includes(gu)) return false;
+          if(only1st && win1<=0) return false;
+          if(score<minScore) return false;
           return true;
         });
-
-        const newMarkers = filtered.map(f => {
-          const [lon, lat] = f.geometry.coordinates;
-          const p = f.properties || {};
-          const pos = new kakao.maps.LatLng(lat, lon);
-          const img = markerImage(colorFor(parseFloat(p.score||'0')));
-
-          const marker = new kakao.maps.Marker({ position: pos, image: img });
-          kakao.maps.event.addListener(marker, 'click', () => {
-            infowindow.setContent(popupHtml(p));
-            infowindow.open(map, marker);
-          });
-
-          const obj = { marker, pos, props: p };
-          markerObjs.push(obj);
-          return marker;
+        const newMarkers=filtered.map(f=>{
+          const [lon,lat]=f.geometry.coordinates; const p=f.properties||{};
+          const pos=new kakao.maps.LatLng(lat,lon); const img=markerImage(colorFor(parseFloat(p.score||'0')));
+          const marker=new kakao.maps.Marker({position:pos,image:img});
+          kakao.maps.event.addListener(marker,'click',()=>{infowindow.setContent(popupHtml(p));infowindow.open(map,marker);});
+          const obj={marker,pos,props:p}; markerObjs.push(obj); return marker;
         });
-
         clusterer.addMarkers(newMarkers);
-        countEl.textContent = `${filtered.length}개`;
-        panel.textContent = `매장 ${features.length}개 로드됨`;
-
-        updateSidebar();     // Top20 갱신
-        updateGuideCounts(); // 색 구간 카운트 갱신
-        updateUrl();         // URL 상태 반영
+        countEl.textContent=`${filtered.length}개`;
+        panel.textContent=`매장 ${features.length}개 로드됨`;
+        updateSidebar(); updateGuideCounts(); updateUrl();
         return filtered;
       }
 
       function fitToMarkers(list){
-        const ms = (list && list.length) ? list : markerObjs.map(o=>o.marker);
-        if (!ms.length) return;
-        const bounds = new kakao.maps.LatLngBounds();
-        ms.forEach(m => bounds.extend(m.getPosition()));
-        map.setBounds(bounds, 20, 20, 20, 20);
+        const ms=(list&&list.length)?list:markerObjs.map(o=>o.marker);
+        if(!ms.length) return; const b=new kakao.maps.LatLngBounds(); ms.forEach(m=>b.extend(m.getPosition()));
+        map.setBounds(b,20,20,20,20);
       }
 
-      // 현재 화면 Top 20 (정렬 토글 반영)
       function updateSidebar(){
-        const bounds = map.getBounds();
-        const visible = markerObjs.filter(o => bounds.contain(o.pos));
-        const key = sortKeyEl.value; // 'score' | 'win1' | 'win2'
-
-        const top = visible
-          .sort((a,b)=>{
-            const av = parseFloat(a.props[key] || 0);
-            const bv = parseFloat(b.props[key] || 0);
-            if (bv !== av) return bv - av; // 내림차순
-            const as = parseFloat(a.props.score || 0);
-            const bs = parseFloat(b.props.score || 0);
-            if (bs !== as) return bs - as;
-            return (''+a.props.name).localeCompare(''+b.props.name);
-          })
-          .slice(0,20);
-
-        sidebarCount.textContent = `${top.length}개`;
-        sidebarList.innerHTML = top.length ? '' : `<div class="empty">현재 화면에 보이는 매장이 없습니다.<br/>줌/이동하거나 필터를 조정해보세요.</div>`;
-
-        top.forEach((o, idx) => {
-          const p = o.props;
-          const el = document.createElement('div');
-          el.className = 'item';
-          el.innerHTML = `
-            <div class="name">${idx+1}. ${p.name||''}</div>
-            <div class="addr">${p.address||''}</div>
-            <div class="meta">1등 ${p.win1??0} · 2등 ${p.win2??0} · 점수 ${p.score??0}</div>
-          `;
-          el.addEventListener('click', ()=>{
-            map.panTo(o.pos);
-            infowindow.setContent(popupHtml(p));
-            infowindow.open(map, o.marker);
-          });
+        const bounds=map.getBounds(); const visible=markerObjs.filter(o=>bounds.contain(o.pos)); const key=sortKeyEl.value;
+        const top=visible.sort((a,b)=>{const av=valOr0(a.props[key]); const bv=valOr0(b.props[key]); if(bv!==av) return bv-av; const as=valOr0(a.props.score); const bs=valOr0(b.props.score); if(bs!==as) return bs-as; return (''+a.props.name).localeCompare(''+b.props.name)}).slice(0,20);
+        sidebarCount.textContent=`${top.length}개`;
+        sidebarList.innerHTML= top.length? '' : `<div class="empty">현재 화면에 보이는 매장이 없습니다.<br/>줌/이동하거나 필터를 조정해보세요.</div>`;
+        top.forEach((o,idx)=>{ const p=o.props; const el=document.createElement('div'); el.className='item';
+          el.innerHTML=`<div class="name">${idx+1}. ${p.name||''}</div><div class="addr">${p.address||''}</div><div class="meta">1등 ${valOr0(p.win1)} · 2등 ${valOr0(p.win2)} · 점수 ${valOr0(p.score)}</div>`;
+          el.addEventListener('click',()=>{map.panTo(o.pos);infowindow.setContent(popupHtml(p));infowindow.open(map,o.marker);});
           sidebarList.appendChild(el);
         });
-
-        // 모바일 바텀시트에도 동일 데이터 렌더
         renderTop20ToSheet(top);
       }
 
-      // 현재 화면(바운즈) 내 색 구간 카운트
       function updateGuideCounts(){
-        const bounds = map.getBounds();
-        let c0=0, c2=0, c5=0, c10=0, c15=0;
-        markerObjs.forEach(o=>{
-          if (!bounds.contain(o.pos)) return;
-          const s = parseFloat(o.props.score || '0');
-          if (s >= 15) c15++; else if (s >= 10) c10++; else if (s >= 5) c5++; else if (s >= 2) c2++; else c0++;
-        });
-        cnt0to2.textContent   = c0;
-        cnt2to5.textContent   = c2;
-        cnt5to10.textContent  = c5;
-        cnt10to15.textContent = c10;
-        cnt15.textContent     = c15;
+        const b=map.getBounds(); let c0=0,c2=0,c5=0,c10=0,c15=0;
+        markerObjs.forEach(o=>{ if(!b.contain(o.pos)) return; const s=valOr0(o.props.score);
+          if(s>=15)c15++; else if(s>=10)c10++; else if(s>=5)c5++; else if(s>=2)c2++; else c0++; });
+        cnt0to2.textContent=c0; cnt2to5.textContent=c2; cnt5to10.textContent=c5; cnt10to15.textContent=c10; cnt15.textContent=c15;
       }
 
-      // 지도 이동/줌 변화 끝날 때 갱신 + URL 반영
-      kakao.maps.event.addListener(map, 'idle', debounce(() => {
-        updateSidebar();
-        updateGuideCounts();
-        updateUrl();
-      }, 150));
+      kakao.maps.event.addListener(map,'idle',debounce(()=>{updateSidebar();updateGuideCounts();updateUrl();},150));
+      qEl.addEventListener('input',debounce(()=>{applyFilters();fitToMarkers();},250));
+      guEl.addEventListener('change',()=>{applyFilters();fitToMarkers();});
+      only1stEl.addEventListener('change',()=>{applyFilters();fitToMarkers();});
+      minScoreEl.addEventListener('input',()=>applyFilters());
+      sortKeyEl.addEventListener('change',()=>{updateSidebar();updateUrl();});
+      fitBtn.addEventListener('click',()=>fitToMarkers());
 
-      // 컨트롤 이벤트
-      qEl.addEventListener('input', debounce(()=>{ applyFilters(); fitToMarkers(); }, 250));
-      guEl.addEventListener('change', ()=>{ applyFilters(); fitToMarkers(); });
-      only1stEl.addEventListener('change', ()=>{ applyFilters(); fitToMarkers(); });
-      minScoreEl.addEventListener('input', ()=>applyFilters());
-      sortKeyEl.addEventListener('change', ()=>{ updateSidebar(); updateUrl(); });
-      fitBtn.addEventListener('click', ()=>fitToMarkers());
-
-      // 현재 위치 버튼
-      locateBtn.addEventListener('click', () => {
-        if (!navigator.geolocation){
-          panel.textContent = '현재 위치: 이 브라우저에서 지원되지 않습니다.';
-          return;
-        }
-        panel.textContent = '현재 위치 확인 중…';
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const lat = pos.coords.latitude, lon = pos.coords.longitude, acc = pos.coords.accuracy || 100;
-            const here = new kakao.maps.LatLng(lat, lon);
-            map.panTo(here);
-            map.setLevel(4);
-
-            if (meMarker) meMarker.setMap(null);
-            if (meCircle) meCircle.setMap(null);
-
-            const dot = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
-              `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">
-                 <circle cx="10" cy="10" r="6" fill="#2563EB" stroke="white" stroke-width="2"/></svg>`
-            );
-            meMarker = new kakao.maps.Marker({
-              position: here,
-              image: new kakao.maps.MarkerImage(dot, new kakao.maps.Size(20,20), {offset:new kakao.maps.Point(10,10)}),
-              map
-            });
-            meCircle = new kakao.maps.Circle({
-              center: here, radius: Math.min(Math.max(acc, 30), 500),
-              strokeWeight: 1, strokeColor: '#2563EB', strokeOpacity: 0.7, strokeStyle: 'shortdash',
-              fillColor: '#60A5FA', fillOpacity: 0.2
-            });
-            meCircle.setMap(map);
-            panel.textContent = `현재 위치 표시 (정확도 ±${Math.round(acc)}m)`;
-            updateUrl();
-          },
-          (err) => {
-            const msg = {1:'위치 권한이 거부되었습니다.', 2:'위치를 확인할 수 없습니다.', 3:'요청이 시간 초과되었습니다.'}[err.code] || '위치 확인 실패';
-            panel.textContent = '현재 위치: ' + msg;
-          },
-          { enableHighAccuracy:true, timeout:7000, maximumAge:0 }
-        );
+      locateBtn.addEventListener('click',()=>{
+        if(!navigator.geolocation){panel.textContent='현재 위치: 이 브라우저에서 지원되지 않습니다.';return;}
+        panel.textContent='현재 위치 확인 중…';
+        navigator.geolocation.getCurrentPosition((pos)=>{
+          const lat=pos.coords.latitude, lon=pos.coords.longitude, acc=pos.coords.accuracy||100;
+          const here=new kakao.maps.LatLng(lat,lon); map.panTo(here); map.setLevel(4);
+          if(meMarker) meMarker.setMap(null); if(meCircle) meCircle.setMap(null);
+          const dot='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="6" fill="#2563EB" stroke="white" stroke-width="2"/></svg>');
+          meMarker=new kakao.maps.Marker({position:here,image:new kakao.maps.MarkerImage(dot,new kakao.maps.Size(20,20),{offset:new kakao.maps.Point(10,10)}),map});
+          meCircle=new kakao.maps.Circle({center:here,radius:Math.min(Math.max(acc,30),500),strokeWeight:1,strokeColor:'#2563EB',strokeOpacity:.7,strokeStyle:'shortdash',fillColor:'#60A5FA',fillOpacity:.2});
+          meCircle.setMap(map); panel.textContent=`현재 위치 표시 (정확도 ±${Math.round(acc)}m)`; updateUrl();
+        },(err)=>{const msg={1:'위치 권한이 거부되었습니다.',2:'위치를 확인할 수 없습니다.',3:'요청이 시간 초과되었습니다.'}[err.code]||'위치 확인 실패'; panel.textContent='현재 위치: '+msg;},{enableHighAccuracy:true,timeout:7000,maximumAge:0});
       });
 
-      // 공유 링크(주소 복사)
-      shareBtn.addEventListener('click', async () => {
-        const url = toQuery(serializeState()).href;
-        try{
-          await navigator.clipboard.writeText(url);
-          panel.textContent = '공유 링크가 클립보드에 복사되었습니다.';
-        }catch{
-          panel.textContent = '복사 실패. 주소창의 URL을 직접 복사해주세요.';
+      // 공유 링크 (클립보드 폴백 포함)
+      shareBtn.addEventListener('click', async ()=>{
+        const url=toQuery(serializeState()).href;
+        try{ await navigator.clipboard.writeText(url); panel.textContent='공유 링크가 클립보드에 복사되었습니다.'; }
+        catch(e){
+          // 폴백
+          const ta=document.createElement('textarea'); ta.value=url; document.body.appendChild(ta);
+          ta.style.position='fixed'; ta.style.left='-9999px'; ta.select();
+          try{ document.execCommand('copy'); panel.textContent='공유 링크가 클립보드에 복사되었습니다.'; } 
+          catch{ panel.textContent='복사 실패. 주소창의 URL을 직접 복사해주세요.'; }
+          finally{ document.body.removeChild(ta); }
         }
       });
 
-      /* ===== 모바일 전용: 표시/토글/바텀시트 & 드래그 제스처 ===== */
+      /* ===== 모바일: 바텀시트 드래그 & FAB 동기 ===== */
       function syncMobileVisibility(){
-        const isMobile = window.matchMedia('(max-width:768px)').matches;
-        document.getElementById('fabLocate').style.display = isMobile ? 'flex' : 'none';
-        document.getElementById('fabShare').style.display  = isMobile ? 'flex' : 'none';
-        document.getElementById('btnGuide').style.display  = isMobile ? 'inline-flex' : 'none';
-        adjustFabForSheet(); // 리사이즈 시 FAB 위치 재계산
-      }
-      syncMobileVisibility();
-      window.addEventListener('resize', syncMobileVisibility);
-
-      const guide = document.querySelector('.score-guide');
-      document.getElementById('btnGuide').addEventListener('click', ()=> guide.classList.toggle('open'));
-
-      const sheet = document.getElementById('sheet');
-      const sheetHandle = document.getElementById('sheetHandle');
-      const SHEET_COLLAPSED = 56;  // 핸들 높이
-      let isDragging = false;
-      let dragStartY = 0;
-      let startTranslateY = 0;
-
-      function getSheetTop(){ return sheet.getBoundingClientRect().top; }
-      function setSheetTranslate(y){ sheet.style.transform = `translateY(${y}px)`; adjustFabForSheet(); }
-      function sheetOpen(){ sheet.classList.add('open'); setSheetTranslate(0); adjustFabForSheet(); }
-      function sheetClose(){
-        sheet.classList.remove('open');
-        const maxY = window.innerHeight - SHEET_COLLAPSED;
-        setSheetTranslate(maxY);
+        const isMobile=window.matchMedia('(max-width:768px)').matches;
+        document.getElementById('fabLocate').style.display=isMobile?'flex':'none';
+        document.getElementById('fabShare').style.display=isMobile?'flex':'none';
+        document.getElementById('btnGuide').style.display=isMobile?'inline-flex':'none';
         adjustFabForSheet();
       }
+      syncMobileVisibility(); window.addEventListener('resize',syncMobileVisibility);
 
-      // 초기 위치(닫힘 상태)
+      const guide=document.querySelector('.score-guide');
+      document.getElementById('btnGuide').addEventListener('click',()=>guide.classList.toggle('open'));
+
+      const sheet=document.getElementById('sheet');
+      const sheetHandle=document.getElementById('sheetHandle');
+      const SHEET_COLLAPSED=56; let isDragging=false; let dragStartY=0; let startTranslateY=0;
+
+      function getSheetTop(){return sheet.getBoundingClientRect().top}
+      function setSheetTranslate(y){sheet.style.transform=`translateY(${y}px)`; adjustFabForSheet();}
+      function sheetOpen(){sheet.classList.add('open'); setSheetTranslate(0); adjustFabForSheet();}
+      function sheetClose(){sheet.classList.remove('open'); const maxY=window.innerHeight-SHEET_COLLAPSED; setSheetTranslate(maxY); adjustFabForSheet();}
       sheetClose();
 
-      // 핸들 탭으로 토글 (편의)
-      sheetHandle.addEventListener('click', (e)=>{
-        if (isDragging) return; // 드래그 종료 클릭 무시
-        if (sheet.classList.contains('open')) sheetClose(); else sheetOpen();
-      });
+      sheetHandle.addEventListener('click',(e)=>{ if(isDragging) return; if(sheet.classList.contains('open')) sheetClose(); else sheetOpen(); });
 
-      // 드래그 제스처 (핸들에서만)
-      sheetHandle.addEventListener('touchstart', (e)=>{
-        isDragging = true;
-        dragStartY = e.touches[0].clientY;
-        const currentTop = getSheetTop();
-        startTranslateY = currentTop; // 현재 top이 곧 translateY(px)
-        sheet.style.transition = 'none';
-      }, {passive:true});
+      sheetHandle.addEventListener('touchstart',(e)=>{isDragging=true; dragStartY=e.touches[0].clientY; startTranslateY=getSheetTop(); sheet.style.transition='none';},{passive:true});
+      sheetHandle.addEventListener('touchmove',(e)=>{ if(!isDragging) return; const dy=e.touches[0].clientY-dragStartY; let next=startTranslateY+dy;
+        const minY=0, maxY=window.innerHeight-SHEET_COLLAPSED; if(next<minY) next=minY; if(next>maxY) next=maxY; setSheetTranslate(next);},{passive:true});
+      sheetHandle.addEventListener('touchend',()=>{ if(!isDragging) return; isDragging=false; sheet.style.transition='';
+        const threshold=(window.innerHeight-SHEET_COLLAPSED)*0.4; const current=getSheetTop(); if(current<=threshold) sheetOpen(); else sheetClose(); });
 
-      sheetHandle.addEventListener('touchmove', (e)=>{
-        if (!isDragging) return;
-        const dy = e.touches[0].clientY - dragStartY;
-        let next = startTranslateY + dy;
-        const minY = 0;
-        const maxY = window.innerHeight - SHEET_COLLAPSED;
-        if (next < minY) next = minY;
-        if (next > maxY) next = maxY;
-        setSheetTranslate(next);
-      }, {passive:true});
-
-      sheetHandle.addEventListener('touchend', ()=>{
-        if (!isDragging) return;
-        isDragging = false;
-        sheet.style.transition = ''; // 원래 전환 복원
-        // 열린 비율 기준으로 스냅
-        const threshold = (window.innerHeight - SHEET_COLLAPSED) * 0.4;
-        const current = getSheetTop();
-        if (current <= threshold) sheetOpen(); else sheetClose();
-      });
-
-      // FAB를 시트 상단에 맞춰 이동
       function adjustFabForSheet(){
-        // 시트 상단으로부터 FAB 바닥 여백 계산
-        const top = getSheetTop();
-        const rise = Math.max(0, window.innerHeight - top); // 바텀에서 올라온 높이
-        const base = 88; // 기본 바닥 여백
-        const gap = 12;  // 시트 위와의 간격
-        const bottom = Math.max(base, rise + gap);
-
-        const loc = document.getElementById('fabLocate');
-        const shr = document.getElementById('fabShare');
-        loc.style.bottom = bottom + 'px';
-        shr.style.bottom = bottom + 'px';
+        const top=getSheetTop(); const rise=Math.max(0,window.innerHeight-top);
+        const base=88, gap=12, bottom=Math.max(base,rise+gap);
+        const loc=document.getElementById('fabLocate'); const shr=document.getElementById('fabShare');
+        loc.style.bottom=bottom+'px'; shr.style.bottom=bottom+'px';
       }
 
       function renderTop20ToSheet(items){
-        const list = document.getElementById('bsList');
-        const cnt  = document.getElementById('bsCount');
-        cnt.textContent = `${items.length}개`;
-        list.innerHTML = '';
-        items.forEach((o, idx)=>{
-          const p = o.props;
-          const el = document.createElement('div');
-          el.className = 'item';
-          el.style.margin = '6px 0';
-          el.innerHTML = `
-            <div class="name">${idx+1}. ${p.name||''}</div>
-            <div class="addr">${p.address||''}</div>
-            <div class="meta">1등 ${p.win1??0} · 2등 ${p.win2??0} · 점수 ${p.score??0}</div>`;
-          el.addEventListener('click', ()=>{
-            map.panTo(o.pos);
-            infowindow.setContent(popupHtml(p));
-            infowindow.open(map, o.marker);
-            sheetOpen();
-          });
+        const list=document.getElementById('bsList'); const cnt=document.getElementById('bsCount');
+        cnt.textContent=`${items.length}개`; list.innerHTML='';
+        items.forEach((o,idx)=>{const p=o.props; const el=document.createElement('div'); el.className='item'; el.style.margin='6px 0';
+          el.innerHTML=`<div class="name">${idx+1}. ${p.name||''}</div><div class="addr">${p.address||''}</div><div class="meta">1등 ${valOr0(p.win1)} · 2등 ${valOr0(p.win2)} · 점수 ${valOr0(p.score)}</div>`;
+          el.addEventListener('click',()=>{map.panTo(o.pos);infowindow.setContent(popupHtml(p));infowindow.open(map,o.marker);sheetOpen();});
           list.appendChild(el);
         });
         adjustFabForSheet();
       }
 
-      // 모바일 FAB → 기존 버튼 클릭 재사용
-      document.getElementById('fabLocate').addEventListener('click', ()=> locateBtn.click());
-      document.getElementById('fabShare').addEventListener('click',  ()=> shareBtn.click());
+      document.getElementById('fabLocate').addEventListener('click',()=>locateBtn.click());
+      document.getElementById('fabShare').addEventListener('click',()=>shareBtn.click());
 
-      // 데이터 로드 → 쿼리 적용 → 필터 적용
       fetch('./data/stores_clean.geojson')
-        .then(res => { if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); })
-        .then(geo => {
-          features = geo.features || [];
-          applyFromQuery();  // URL 쿼리 반영
-          panel.textContent = `매장 ${features.length}개 로드됨`;
-          applyFilters();
-          if (!location.search) fitToMarkers(); // 쿼리 없으면 전체 맞추기
-        })
-        .catch(err => {
-          panel.textContent = '데이터 로드 실패: ' + err.message;
-          console.error(err);
-        });
+        .then(res=>{if(!res.ok) throw new Error('HTTP '+res.status); return res.json();})
+        .then(geo=>{features=geo.features||[]; applyFromQuery(); panel.textContent=`매장 ${features.length}개 로드됨`; applyFilters(); if(!location.search) fitToMarkers();})
+        .catch(err=>{panel.textContent='데이터 로드 실패: '+err.message; console.error(err);});
     });
   </script>
 </body>
