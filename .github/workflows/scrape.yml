@@ -2,8 +2,7 @@ name: Weekly scrape & update LoTTang
 
 on:
   schedule:
-    # 매주 일요일 15:00 KST(= 06:00 UTC)
-    - cron: "0 6 * * 0"
+    - cron: "0 6 * * 0"   # 매주 일요일 15:00 KST
   workflow_dispatch: {}
 
 permissions:
@@ -12,7 +11,6 @@ permissions:
 jobs:
   scrape-update:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,19 +20,16 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Chrome
-        uses: browser-actions/setup-chrome@v1
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run scraper & update
+      - name: Run scraper & update (requests)
         env:
           TZ: Asia/Seoul
         run: |
-          python scripts/scrape_and_update.py \
+          python scripts/scrape_and_update_requests.py \
             --repo-root . \
             --base-draw 1184 \
             --base-date 2025-08-09
@@ -54,11 +49,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # .gitignore 무시하고 강제 stage
           git add -f data/*.csv data/*.geojson docs/scoring.md || true
           git status --porcelain
           if ! git diff --cached --quiet; then
             git commit -m "chore(data): weekly scrape & A3 recompute [skip ci]"
             git push
-          else
+          else:
             echo "No changes to commit."
           fi
