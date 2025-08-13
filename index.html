@@ -3,13 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <title>LoTTang - 로또 명당 (Kakao Map)</title>
-  <!-- Kakao Maps JS SDK: JavaScript 키 + clusterer -->
+
+  <!-- Favicon -->
+  <link rel="icon" href="./favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <meta name="theme-color" content="#2563EB">
+
+  <!-- Kakao Maps JS SDK -->
   <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ca26f9ae7a3d87a3526307104203c1a0&autoload=false&libraries=clusterer"></script>
   <style>
     html,body,#map{height:100%;margin:0}
     *{box-sizing:border-box}
 
-    /* 상단 툴바 고정 */
+    /* 상단 툴바 */
     .ui{
       position: fixed; top:10px; left:10px; right:350px;
       max-width:1100px; margin:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
@@ -32,7 +40,7 @@
       font-family:system-ui,Apple SD Gothic Neo,sans-serif
     }
 
-    /* 왼쪽 점수 가이드 + 고지 */
+    /* 왼쪽 점수 가이드 */
     .score-guide{
       position: fixed; top:120px; left:10px; width:260px; max-height:calc(100% - 140px); overflow:auto;
       background:#fff; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,.15);
@@ -47,22 +55,16 @@
     .score-guide .desc{ font-size:12px; color:#6b7280; line-height:1.5; margin-top:8px; }
     .score-guide .tip{ font-size:11px; color:#94a3b8; margin-top:6px; }
 
-    /* 법적 고지문 */
-    .legal{
-      margin-top:10px; padding:10px; border:1px dashed #e5e7eb; border-radius:10px; background:#fafafa;
-      font-size:11px; color:#374151; line-height:1.55;
-    }
-    .legal b{color:#111}
-    .legal .muted{color:#6b7280}
-
     /* 오른쪽 Top 20 사이드바 */
     .sidebar{
-      position: fixed; top:10px; right:10px; bottom:10px; width:320px;
+      position: fixed; top:10px; right:10px; bottom:10px; width:340px;
       background:#fff; border:1px solid #e5e7eb; border-radius:12px;
       box-shadow:0 6px 18px rgba(0,0,0,.15); z-index:1000; display:flex; flex-direction:column;
       font-family:system-ui,Apple SD Gothic Neo,sans-serif; overflow:hidden
     }
-    .sidebar-header{padding:10px 12px; border-bottom:1px solid #eef; display:flex; justify-content:space-between; align-items:center}
+    .sidebar-header{
+      padding:10px 12px; border-bottom:1px solid #eef; display:flex; justify-content:space-between; align-items:center; gap:8px
+    }
     .sidebar-list{overflow:auto; padding:6px}
     .item{padding:10px; border:1px solid #eef; border-radius:10px; margin:6px 0; cursor:pointer; display:flex; flex-direction:column; gap:4px}
     .item:hover{background:#fafafa}
@@ -90,13 +92,14 @@
     </label>
     <button id="fit" class="btn">범위 맞추기</button>
     <button id="locate" class="btn">현재 위치</button>
+    <button id="share" class="btn">공유 링크</button>
     <span id="count" class="badge">0개</span>
   </div>
 
   <!-- 상태 패널 -->
   <div class="panel">로딩 중…</div>
 
-  <!-- 왼쪽 점수 가이드 + 고지 -->
+  <!-- 왼쪽 점수 가이드 -->
   <aside class="score-guide">
     <h3>점수 색상 가이드</h3>
     <div class="row"><div class="left"><span class="chip" style="background:#9CA3AF"></span><div class="label">0 ≤ s &lt; 2</div></div><div id="cnt0to2" class="cnt">0</div></div>
@@ -104,28 +107,21 @@
     <div class="row"><div class="left"><span class="chip" style="background:#2563EB"></span><div class="label">5 ≤ s &lt; 10</div></div><div id="cnt5to10" class="cnt">0</div></div>
     <div class="row"><div class="left"><span class="chip" style="background:#7C3AED"></span><div class="label">10 ≤ s &lt; 15</div></div><div id="cnt10to15" class="cnt">0</div></div>
     <div class="row"><div class="left"><span class="chip" style="background:#DC2626"></span><div class="label">15 ≤ s</div></div><div id="cnt15" class="cnt">0</div></div>
-
-    <div class="desc">
-      <b>점수 = (5×1등 + 1×2등) × 최근가중</b><br/>
-      최근가중(반감 12개월) = <code>0.5^(경과개월/12)</code>
-    </div>
+    <div class="desc"><b>점수 = (5×1등 + 1×2등) × 최근가중</b><br/>최근가중(반감 12개월) = <code>0.5^(경과개월/12)</code></div>
     <div class="tip">* 상단 검색/필터가 적용된 결과 기준으로 집계됩니다.</div>
-
-    <!-- ✅ 법적 고지문 -->
-    <div class="legal">
-      <b>법적 고지</b><br/>
-      · 복권은 <b>만 19세 미만 판매·구매 불가</b>이며, 미성년자의 복권 구매 및 당첨금 지급은 제한됩니다.<br/>
-      · <b>과도한 구매는 위험</b>할 수 있습니다. 도움이 필요하시면 <b>도박중독 상담전화 1336</b> (24시간) 이용 바랍니다.<br/>
-      · 당첨 확률은 각 회차마다 <b>동일</b>하며, 과거 실적이 미래 결과를 보장하지 않습니다.<br/>
-      · 본 서비스는 <span class="muted">비영리 MVP</span>로 공개 자료를 가공·시각화하며, <b>데이터 오류/지연</b>이 있을 수 있습니다. 공식 정보는 <b>동행복권</b>을 확인하세요.<br/>
-      · 현재 위치는 <span class="muted">브라우저 내 일시 사용</span>되며, 서버에 저장하지 않습니다.
-    </div>
   </aside>
 
-  <!-- 오른쪽 Top 20 사이드바 -->
+  <!-- 오른쪽 Top 20 + 정렬 토글 -->
   <aside class="sidebar">
     <div class="sidebar-header">
-      <div><b>현재 화면 Top 20</b></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <b>현재 화면 Top 20</b>
+        <select id="sortKey">
+          <option value="score">점수 순</option>
+          <option value="win1">1등 수</option>
+          <option value="win2">2등 수</option>
+        </select>
+      </div>
       <div id="sidebarCount" class="badge">0개</div>
     </div>
     <div id="sidebarList" class="sidebar-list"></div>
@@ -150,9 +146,11 @@
       const minScoreVal = document.getElementById('minScoreVal');
       const fitBtn = document.getElementById('fit');
       const locateBtn = document.getElementById('locate');
+      const shareBtn = document.getElementById('share');
 
       const sidebarList = document.getElementById('sidebarList');
       const sidebarCount = document.getElementById('sidebarCount');
+      const sortKeyEl = document.getElementById('sortKey');
 
       // 좌측 색 구간 카운트 요소
       const cnt0to2   = document.getElementById('cnt0to2');
@@ -167,7 +165,7 @@
         map, averageCenter:true, minLevel:7, disableClickZoom:false
       });
 
-      // 현재 위치 마커/정확도 원
+      // 현재 위치 표시
       let meMarker = null, meCircle = null;
 
       function colorFor(score){
@@ -194,6 +192,44 @@
           </div>`;
       }
       function debounce(fn, wait){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; }
+
+      /* ------- 공유(퍼머링크) 상태 직렬화/복원 ------- */
+      function serializeState(){
+        const c = map.getCenter();
+        return {
+          lat: c.getLat().toFixed(6),
+          lon: c.getLng().toFixed(6),
+          lvl: map.getLevel(),
+          q: qEl.value.trim(),
+          gu: guEl.value,
+          o1: only1stEl.checked ? 1 : 0,
+          ms: minScoreEl.value,
+          sk: sortKeyEl.value
+        };
+      }
+      function toQuery(s){
+        const u = new URL(window.location.href);
+        Object.entries(s).forEach(([k,v]) => u.searchParams.set(k, v));
+        return u;
+      }
+      function applyFromQuery(){
+        const sp = new URLSearchParams(location.search);
+        if (sp.has('q'))  qEl.value = sp.get('q');
+        if (sp.has('gu')) guEl.value = sp.get('gu');
+        if (sp.has('o1')) only1stEl.checked = sp.get('o1') === '1';
+        if (sp.has('ms')) minScoreEl.value = sp.get('ms');
+        if (sp.has('sk')) sortKeyEl.value = sp.get('sk');
+        if (sp.has('lat') && sp.has('lon') && sp.has('lvl')){
+          const lat = parseFloat(sp.get('lat')), lon = parseFloat(sp.get('lon')), lvl = parseInt(sp.get('lvl'),10);
+          if (isFinite(lat) && isFinite(lon) && isFinite(lvl)){
+            map.setLevel(lvl);
+            map.setCenter(new kakao.maps.LatLng(lat, lon));
+          }
+        }
+      }
+      function updateUrl(){
+        history.replaceState(null, '', toQuery(serializeState()));
+      }
 
       function applyFilters(){
         const kw = qEl.value.trim();
@@ -226,7 +262,7 @@
           const pos = new kakao.maps.LatLng(lat, lon);
           const img = markerImage(colorFor(parseFloat(p.score||'0')));
 
-        const marker = new kakao.maps.Marker({ position: pos, image: img });
+          const marker = new kakao.maps.Marker({ position: pos, image: img });
           kakao.maps.event.addListener(marker, 'click', () => {
             infowindow.setContent(popupHtml(p));
             infowindow.open(map, marker);
@@ -243,6 +279,7 @@
 
         updateSidebar();     // Top20 갱신
         updateGuideCounts(); // 색 구간 카운트 갱신
+        updateUrl();         // URL 상태 반영
         return filtered;
       }
 
@@ -254,12 +291,23 @@
         map.setBounds(bounds, 20, 20, 20, 20);
       }
 
-      // 현재 화면 Top 20
+      // 현재 화면 Top 20 (정렬 토글 반영)
       function updateSidebar(){
         const bounds = map.getBounds();
         const visible = markerObjs.filter(o => bounds.contain(o.pos));
+        const key = sortKeyEl.value; // 'score' | 'win1' | 'win2'
+
         const top = visible
-          .sort((a,b)=> (parseFloat(b.props.score||0)-parseFloat(a.props.score||0)) || (''+a.props.name).localeCompare(''+b.props.name))
+          .sort((a,b)=>{
+            const av = parseFloat(a.props[key] || 0);
+            const bv = parseFloat(b.props[key] || 0);
+            if (bv !== av) return bv - av; // 내림차순
+            // 2차 정렬: 점수, 이름
+            const as = parseFloat(a.props.score || 0);
+            const bs = parseFloat(b.props.score || 0);
+            if (bs !== as) return bs - as;
+            return (''+a.props.name).localeCompare(''+b.props.name);
+          })
           .slice(0,20);
 
         sidebarCount.textContent = `${top.length}개`;
@@ -290,11 +338,7 @@
         markerObjs.forEach(o=>{
           if (!bounds.contain(o.pos)) return;
           const s = parseFloat(o.props.score || '0');
-          if (s >= 15) c15++;
-          else if (s >= 10) c10++;
-          else if (s >= 5) c5++;
-          else if (s >= 2) c2++;
-          else c0++;
+          if (s >= 15) c15++; else if (s >= 10) c10++; else if (s >= 5) c5++; else if (s >= 2) c2++; else c0++;
         });
         cnt0to2.textContent   = c0;
         cnt2to5.textContent   = c2;
@@ -303,10 +347,11 @@
         cnt15.textContent     = c15;
       }
 
-      // 지도 이동/줌 변화 끝날 때 갱신
+      // 지도 이동/줌 변화 끝날 때 갱신 + URL 반영
       kakao.maps.event.addListener(map, 'idle', debounce(() => {
         updateSidebar();
         updateGuideCounts();
+        updateUrl();
       }, 150));
 
       // 컨트롤 이벤트
@@ -314,6 +359,7 @@
       guEl.addEventListener('change', ()=>{ applyFilters(); fitToMarkers(); });
       only1stEl.addEventListener('change', ()=>{ applyFilters(); fitToMarkers(); });
       minScoreEl.addEventListener('input', ()=>applyFilters());
+      sortKeyEl.addEventListener('change', ()=>{ updateSidebar(); updateUrl(); });
       fitBtn.addEventListener('click', ()=>fitToMarkers());
 
       // 현재 위치 버튼
@@ -330,11 +376,9 @@
             map.panTo(here);
             map.setLevel(4);
 
-            // 기존 표시 제거
             if (meMarker) meMarker.setMap(null);
             if (meCircle) meCircle.setMap(null);
 
-            // 파란 점 마커
             const dot = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(
               `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">
                  <circle cx="10" cy="10" r="6" fill="#2563EB" stroke="white" stroke-width="2"/></svg>`
@@ -344,15 +388,14 @@
               image: new kakao.maps.MarkerImage(dot, new kakao.maps.Size(20,20), {offset:new kakao.maps.Point(10,10)}),
               map
             });
-            // 정확도 원
             meCircle = new kakao.maps.Circle({
               center: here, radius: Math.min(Math.max(acc, 30), 500),
               strokeWeight: 1, strokeColor: '#2563EB', strokeOpacity: 0.7, strokeStyle: 'shortdash',
               fillColor: '#60A5FA', fillOpacity: 0.2
             });
             meCircle.setMap(map);
-
             panel.textContent = `현재 위치 표시 (정확도 ±${Math.round(acc)}m)`;
+            updateUrl();
           },
           (err) => {
             const msg = {1:'위치 권한이 거부되었습니다.', 2:'위치를 확인할 수 없습니다.', 3:'요청이 시간 초과되었습니다.'}[err.code] || '위치 확인 실패';
@@ -362,14 +405,26 @@
         );
       });
 
-      // 데이터 로드
+      // 공유 링크(주소 복사)
+      shareBtn.addEventListener('click', async () => {
+        const url = toQuery(serializeState()).href;
+        try{
+          await navigator.clipboard.writeText(url);
+          panel.textContent = '공유 링크가 클립보드에 복사되었습니다.';
+        }catch{
+          panel.textContent = '복사 실패. 주소창의 URL을 직접 복사해주세요.';
+        }
+      });
+
+      // 데이터 로드 → 쿼리 적용 → 필터 적용
       fetch('./data/stores_clean.geojson')
         .then(res => { if(!res.ok) throw new Error('HTTP '+res.status); return res.json(); })
         .then(geo => {
           features = geo.features || [];
+          applyFromQuery();  // URL 쿼리 반영
           panel.textContent = `매장 ${features.length}개 로드됨`;
           applyFilters();
-          fitToMarkers();
+          if (!location.search) fitToMarkers(); // 쿼리 없으면 전체 맞추기
         })
         .catch(err => {
           panel.textContent = '데이터 로드 실패: ' + err.message;
