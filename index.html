@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>LoTTang - 로또 명당 (Kakao Map)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
   <!-- Favicon -->
   <link rel="icon" href="./favicon.ico">
@@ -11,55 +12,69 @@
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
   <meta name="theme-color" content="#2563EB">
 
+  <!-- (선택) PWA manifest: manifest.json 준비되면 주석 해제 -->
+  <!-- <link rel="manifest" href="./manifest.json"> -->
+
   <!-- Kakao Maps JS SDK -->
   <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ca26f9ae7a3d87a3526307104203c1a0&autoload=false&libraries=clusterer"></script>
+
   <style>
     html,body,#map{height:100%;margin:0}
     *{box-sizing:border-box}
+    :root{
+      --bg:#fff; --border:#e5e7eb; --muted:#6b7280; --ink:#111;
+      --brand:#2563EB; --brand-soft:#eef2ff; --shadow:0 6px 18px rgba(0,0,0,.15);
+    }
 
     /* 상단 툴바 */
     .ui{
-      position: fixed; top:10px; left:10px; right:350px;
+      position: fixed; top:10px; left:10px; right:360px;
       max-width:1100px; margin:auto; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
       background:#ffffffE6; backdrop-filter:blur(6px);
-      border:1px solid #e5e7eb; border-radius:12px; padding:10px;
-      box-shadow:0 6px 18px rgba(0,0,0,.15); font-family:system-ui,Apple SD Gothic Neo,sans-serif;
+      border:1px solid var(--border); border-radius:12px; padding:10px;
+      box-shadow:var(--shadow); font-family:system-ui,Apple SD Gothic Neo,sans-serif;
       z-index:1000
     }
-    .ui input[type="text"]{flex:1;min-width:220px;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px}
-    .ui select,.ui input[type="range"]{padding:8px;border:1px solid #e5e7eb;border-radius:8px}
+    .ui input[type="text"]{flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--border);border-radius:8px}
+    .ui select,.ui input[type="range"]{padding:8px;border:1px solid var(--border);border-radius:8px}
     .ui label{display:flex;align-items:center;gap:6px;font-size:14px;white-space:nowrap}
-    .btn{padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;background:#fafafa;cursor:pointer}
+    .btn{padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:#fafafa;cursor:pointer}
     .btn:hover{background:#f0f0f0}
-    .badge{padding:4px 8px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:12px}
+    .badge{padding:4px 8px;border-radius:999px;background:var(--brand-soft);color:#3730a3;font-size:12px}
 
     /* 상태 패널 */
     .panel{
-      position: fixed; top:74px; left:10px; background:#fff; padding:6px 10px;
+      position: fixed; top:74px; left:10px; background:var(--bg); padding:6px 10px;
       border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,.15); z-index:1000;
       font-family:system-ui,Apple SD Gothic Neo,sans-serif
     }
 
-    /* 왼쪽 점수 가이드 */
+    /* 왼쪽 점수 가이드 + 법적 고지 */
     .score-guide{
       position: fixed; top:120px; left:10px; width:260px; max-height:calc(100% - 140px); overflow:auto;
-      background:#fff; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,.15);
+      background:var(--bg); border:1px solid var(--border); border-radius:12px; box-shadow:var(--shadow);
       z-index:1000; font-family:system-ui,Apple SD Gothic Neo,sans-serif; padding:12px;
     }
     .score-guide h3{margin:0 0 8px 0; font-size:14px; font-weight:700;}
     .score-guide .row{display:flex; align-items:center; gap:8px; padding:6px 4px; border:1px solid #f1f5f9; border-radius:10px; margin-bottom:6px; justify-content:space-between;}
     .score-guide .left{display:flex; align-items:center; gap:8px}
-    .score-guide .chip{ width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1px #e5e7eb inset; }
-    .score-guide .label{ font-size:13px; color:#111; }
-    .score-guide .cnt{ font-size:12px; color:#111; background:#f3f4f6; border-radius:999px; padding:2px 8px }
+    .score-guide .chip{ width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1px var(--border) inset; }
+    .score-guide .label{ font-size:13px; color:var(--ink); }
+    .score-guide .cnt{ font-size:12px; color:var(--ink); background:#f3f4f6; border-radius:999px; padding:2px 8px }
     .score-guide .desc{ font-size:12px; color:#6b7280; line-height:1.5; margin-top:8px; }
     .score-guide .tip{ font-size:11px; color:#94a3b8; margin-top:6px; }
+    .legal{
+      margin-top:10px; padding:10px; border:1px dashed var(--border); border-radius:10px; background:#fafafa;
+      font-size:11px; color:#374151; line-height:1.55;
+    }
+    .legal b{color:var(--ink)}
+    .legal .muted{color:var(--muted)}
 
-    /* 오른쪽 Top 20 사이드바 */
+    /* 오른쪽 Top 20 사이드바 (데스크탑) */
     .sidebar{
       position: fixed; top:10px; right:10px; bottom:10px; width:340px;
-      background:#fff; border:1px solid #e5e7eb; border-radius:12px;
-      box-shadow:0 6px 18px rgba(0,0,0,.15); z-index:1000; display:flex; flex-direction:column;
+      background:var(--bg); border:1px solid var(--border); border-radius:12px;
+      box-shadow:var(--shadow); z-index:1000; display:flex; flex-direction:column;
       font-family:system-ui,Apple SD Gothic Neo,sans-serif; overflow:hidden
     }
     .sidebar-header{
@@ -72,6 +87,44 @@
     .item .addr{font-size:12px; color:#374151}
     .item .meta{font-size:12px; color:#111; display:flex; gap:8px}
     .empty{padding:16px; color:#6b7280; font-size:14px}
+
+    /* 공통 FAB */
+    .fab{position:fixed; z-index:1001; width:44px; height:44px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center; background:var(--brand); color:#fff;
+      box-shadow:0 10px 24px rgba(0,0,0,.25); border:none; cursor:pointer}
+    .fab:active{transform:translateY(1px)}
+
+    /* 모바일 전용 */
+    .bottom-sheet{display:none}
+    #btnGuide{display:none}
+
+    @media (max-width: 768px){
+      .ui{left:10px; right:10px; gap:6px; padding:8px}
+      .ui select, .ui label, #fit, #share{display:none} /* 필터/범위맞추기/공유는 모바일 UI로 이동 */
+      .score-guide{left:10px; width:86vw; max-height:60vh; display:none}
+      .score-guide.open{display:block}
+
+      .sidebar{display:none} /* 데스크탑 사이드바 숨김 → 바텀시트 사용 */
+
+      .bottom-sheet{
+        display:block; position:fixed; left:0; right:0; bottom:0; z-index:1000;
+        background:#fff; border-radius:16px 16px 0 0; box-shadow:0 -8px 24px rgba(0,0,0,.25);
+        transform:translateY(calc(100% - 56px)); transition:.25s ease;
+      }
+      .bottom-sheet.open{transform:translateY(0)}
+      .bs-handle{height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 12px}
+      .bs-drag{width:40px; height:4px; background:#e5e7eb; border-radius:4px; margin:0 auto}
+      .bs-title{font-weight:700}
+      .bs-content{max-height:45vh; overflow:auto; padding:8px 8px 12px}
+      .bs-count{background:var(--brand-soft); color:#3730a3; padding:4px 8px; border-radius:999px; font-size:12px}
+
+      /* FABs */
+      #fabLocate{left:12px; bottom:88px}
+      #fabShare{right:12px; bottom:88px}
+
+      /* 가이드 토글 버튼 */
+      #btnGuide{position:fixed; left:12px; bottom:144px; z-index:1001; display:inline-flex}
+    }
   </style>
 </head>
 <body>
@@ -99,7 +152,7 @@
   <!-- 상태 패널 -->
   <div class="panel">로딩 중…</div>
 
-  <!-- 왼쪽 점수 가이드 -->
+  <!-- 왼쪽 점수 가이드 + 법적 고지 -->
   <aside class="score-guide">
     <h3>점수 색상 가이드</h3>
     <div class="row"><div class="left"><span class="chip" style="background:#9CA3AF"></span><div class="label">0 ≤ s &lt; 2</div></div><div id="cnt0to2" class="cnt">0</div></div>
@@ -107,11 +160,24 @@
     <div class="row"><div class="left"><span class="chip" style="background:#2563EB"></span><div class="label">5 ≤ s &lt; 10</div></div><div id="cnt5to10" class="cnt">0</div></div>
     <div class="row"><div class="left"><span class="chip" style="background:#7C3AED"></span><div class="label">10 ≤ s &lt; 15</div></div><div id="cnt10to15" class="cnt">0</div></div>
     <div class="row"><div class="left"><span class="chip" style="background:#DC2626"></span><div class="label">15 ≤ s</div></div><div id="cnt15" class="cnt">0</div></div>
-    <div class="desc"><b>점수 = (5×1등 + 1×2등) × 최근가중</b><br/>최근가중(반감 12개월) = <code>0.5^(경과개월/12)</code></div>
+
+    <div class="desc">
+      <b>점수 = (5×1등 + 1×2등) × 최근가중</b><br/>
+      최근가중(반감 12개월) = <code>0.5^(경과개월/12)</code>
+    </div>
     <div class="tip">* 상단 검색/필터가 적용된 결과 기준으로 집계됩니다.</div>
+
+    <div class="legal">
+      <b>법적 고지</b><br/>
+      · 복권은 <b>만 19세 미만 판매·구매 불가</b>입니다. 미성년자의 복권 구매 및 당첨금 지급은 제한됩니다.<br/>
+      · <b>과도한 구매는 위험</b>할 수 있습니다. 도움이 필요하시면 <b>도박중독 상담전화 1336</b>(24시간)을 이용하세요.<br/>
+      · 당첨 확률은 각 회차마다 <b>동일</b>하며, 과거 실적이 미래 결과를 보장하지 않습니다.<br/>
+      · 본 서비스는 <span class="muted">비영리 MVP</span>로 공개 자료를 가공·시각화하며, <b>데이터 오류/지연</b>이 있을 수 있습니다. 공식 정보는 <b>동행복권</b>을 확인하세요.<br/>
+      · 현재 위치는 <span class="muted">브라우저 내 일시 사용</span>되며, 서버에 저장하지 않습니다.
+    </div>
   </aside>
 
-  <!-- 오른쪽 Top 20 + 정렬 토글 -->
+  <!-- 데스크탑 오른쪽 Top20 -->
   <aside class="sidebar">
     <div class="sidebar-header">
       <div style="display:flex;align-items:center;gap:8px">
@@ -126,6 +192,23 @@
     </div>
     <div id="sidebarList" class="sidebar-list"></div>
   </aside>
+
+  <!-- 모바일: 가이드 열기 버튼 -->
+  <button id="btnGuide" class="btn">가이드</button>
+
+  <!-- 모바일: 바텀시트 Top20 -->
+  <div id="sheet" class="bottom-sheet">
+    <div class="bs-handle">
+      <div class="bs-drag"></div>
+      <div class="bs-title">현재 화면 Top 20</div>
+      <div id="bsCount" class="bs-count">0개</div>
+    </div>
+    <div id="bsList" class="bs-content"></div>
+  </div>
+
+  <!-- 모바일: FAB 2개 -->
+  <button id="fabLocate" class="fab" title="현재 위치" style="display:none">📍</button>
+  <button id="fabShare"  class="fab" title="공유"     style="display:none">🔗</button>
 
   <script>
     kakao.maps.load(function(){
@@ -302,7 +385,6 @@
             const av = parseFloat(a.props[key] || 0);
             const bv = parseFloat(b.props[key] || 0);
             if (bv !== av) return bv - av; // 내림차순
-            // 2차 정렬: 점수, 이름
             const as = parseFloat(a.props.score || 0);
             const bs = parseFloat(b.props.score || 0);
             if (bs !== as) return bs - as;
@@ -329,6 +411,9 @@
           });
           sidebarList.appendChild(el);
         });
+
+        // 모바일 바텀시트에도 동일 데이터 렌더
+        renderTop20ToSheet(top);
       }
 
       // 현재 화면(바운즈) 내 색 구간 카운트
@@ -415,6 +500,50 @@
           panel.textContent = '복사 실패. 주소창의 URL을 직접 복사해주세요.';
         }
       });
+
+      /* ===== 모바일 전용: 표시/토글/바텀시트 ===== */
+      function syncMobileVisibility(){
+        const isMobile = window.matchMedia('(max-width:768px)').matches;
+        document.getElementById('fabLocate').style.display = isMobile ? 'flex' : 'none';
+        document.getElementById('fabShare').style.display  = isMobile ? 'flex' : 'none';
+        document.getElementById('btnGuide').style.display  = isMobile ? 'inline-flex' : 'none';
+      }
+      syncMobileVisibility();
+      window.addEventListener('resize', syncMobileVisibility);
+
+      const guide = document.querySelector('.score-guide');
+      document.getElementById('btnGuide').addEventListener('click', ()=> guide.classList.toggle('open'));
+
+      const sheet = document.getElementById('sheet');
+      sheet.querySelector('.bs-handle').addEventListener('click', ()=> sheet.classList.toggle('open'));
+
+      function renderTop20ToSheet(items){
+        const list = document.getElementById('bsList');
+        const cnt  = document.getElementById('bsCount');
+        cnt.textContent = `${items.length}개`;
+        list.innerHTML = '';
+        items.forEach((o, idx)=>{
+          const p = o.props;
+          const el = document.createElement('div');
+          el.className = 'item';
+          el.style.margin = '6px 0';
+          el.innerHTML = `
+            <div class="name">${idx+1}. ${p.name||''}</div>
+            <div class="addr">${p.address||''}</div>
+            <div class="meta">1등 ${p.win1??0} · 2등 ${p.win2??0} · 점수 ${p.score??0}</div>`;
+          el.addEventListener('click', ()=>{
+            map.panTo(o.pos);
+            infowindow.setContent(popupHtml(p));
+            infowindow.open(map, o.marker);
+            sheet.classList.add('open');
+          });
+          list.appendChild(el);
+        });
+      }
+
+      // 모바일 FAB → 기존 버튼 클릭 재사용
+      document.getElementById('fabLocate').addEventListener('click', ()=> locateBtn.click());
+      document.getElementById('fabShare').addEventListener('click',  ()=> shareBtn.click());
 
       // 데이터 로드 → 쿼리 적용 → 필터 적용
       fetch('./data/stores_clean.geojson')
