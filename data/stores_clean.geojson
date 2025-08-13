@@ -1,0 +1,36 @@
+{
+  "type": "FeatureCollection",
+  "name": "stores_clean",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "store_id": "SEOUL-GANGNAM-001",
+        "name": "예시복권방 강남점",
+        "address": "서울 강남구 테헤란로 123",
+        "win1": 0,
+        "win2": 0,
+        "score": 0.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [127.0317, 37.4982]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "store_id": "BUSAN-SUYEONG-001",
+        "name": "예시로또 부산수영",
+        "address": "부산 수영구 광안해변로 100",
+        "win1": 0,
+        "win2": 0,
+        "score": 0.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [129.1187, 35.1536]
+      }
+    }
+  ]
+}
