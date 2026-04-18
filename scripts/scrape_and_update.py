@@ -176,7 +176,7 @@ if __name__ == "__main__":
     p.add_argument("--base-date", type=str, required=True)
     args = p.parse_args()
 
-    main(args.repo-root, args.base-draw, args.base-date)
+    main(args.repo_root, args.base_draw, args.base_date)
 
     # A3 계산(geojson이 있는 경우에만)
     geojson_path = os.path.join(args.repo_root, "data", "stores_clean.geojson")

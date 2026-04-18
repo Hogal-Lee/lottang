@@ -1,0 +1,43 @@
+name: 로또 데이터 자동 업데이트
+
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # 매주 월요일 02:00 UTC (한국시간 11:00)
+  workflow_dispatch:       # 수동 실행 버튼
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 의존성 설치
+        run: |
+          pip install requests pandas lxml beautifulsoup4 cssselect playwright
+          python -m playwright install chromium --with-deps
+
+      - name: 데이터 업데이트 (최근 5회차 증분)
+        env:
+          KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+        run: |
+          python scripts/build_stores.py \
+            --kakao-rest-key "$KAKAO_REST_KEY" \
+            --draws 5 \
+            --resume
+
+      - name: 변경사항 커밋 & 푸시
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/stores_clean.geojson data/wins_raw.csv
+          git diff --staged --quiet || git commit -m "chore: 로또 데이터 자동 업데이트 $(date +'%Y-%m-%d')"
+          git push
