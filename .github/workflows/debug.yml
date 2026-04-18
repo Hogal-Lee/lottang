@@ -35,23 +35,27 @@ jobs:
               page = ctx.new_page()
 
               def on_request(req):
-                  if any(k in req.url for k in ["store", "topStore", "lottery", "winner", "win", "당첨"]):
+                  if req.resource_type in ("xhr", "fetch") or any(k in req.url for k in ["store", "wnprchs", "winner", "win", "당첨", ".do", ".json"]):
                       requests_log.append({"method": req.method, "url": req.url,
                                            "post": req.post_data or ""})
 
               def on_response(res):
-                  if any(k in res.url for k in ["store", "topStore", "lottery", "winner"]):
+                  if res.request.resource_type in ("xhr", "fetch") or any(k in res.url for k in ["store", "wnprchs", "winner", ".do", ".json"]):
+                      try:
+                          body = res.body().decode("utf-8", errors="ignore")[:500]
+                      except Exception:
+                          body = ""
                       requests_log.append({"type": "response", "url": res.url,
-                                           "status": res.status})
+                                           "status": res.status, "body_preview": body})
 
               page.on("request", on_request)
               page.on("response", on_response)
 
               page.goto("https://www.dhlottery.co.kr/common.do?method=main", timeout=30000, wait_until="domcontentloaded")
               time.sleep(2)
-              page.goto("https://www.dhlottery.co.kr/store.do?method=topStore&pageGubun=L645&drwNo=1220",
+              page.goto("https://www.dhlottery.co.kr/wnprchsplcsrch/home",
                         timeout=40000, wait_until="networkidle")
-              time.sleep(3)
+              time.sleep(5)
 
               with open("debug_draw.html", "w", encoding="utf-8") as f:
                   f.write(page.content())
