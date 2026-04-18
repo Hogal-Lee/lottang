@@ -1,0 +1,31 @@
+name: HTML 구조 디버그
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 의존성 설치
+        run: |
+          pip install requests lxml cssselect playwright
+          python -m playwright install chromium --with-deps
+
+      - name: 1220회차 HTML 저장
+        run: |
+          python scripts/build_stores.py \
+            --kakao-rest-key "dummy" \
+            --debug-draw 1220
+
+      - name: HTML 아티팩트 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-html
+          path: debug_draw.html
