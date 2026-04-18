@@ -18,14 +18,60 @@ jobs:
           pip install requests lxml cssselect playwright
           python -m playwright install chromium --with-deps
 
-      - name: 1220회차 HTML 저장
+      - name: 네트워크 요청 및 HTML 저장
         run: |
-          python scripts/build_stores.py \
-            --kakao-rest-key "dummy" \
-            --debug-draw 1220
+          python3 - <<'EOF'
+          from playwright.sync_api import sync_playwright
+          import json, time
 
-      - name: HTML 아티팩트 업로드
+          requests_log = []
+
+          with sync_playwright() as pw:
+              browser = pw.chromium.launch(headless=True)
+              ctx = browser.new_context(
+                  user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                  locale="ko-KR",
+              )
+              page = ctx.new_page()
+
+              def on_request(req):
+                  if any(k in req.url for k in ["store", "topStore", "lottery", "winner", "win", "당첨"]):
+                      requests_log.append({"method": req.method, "url": req.url,
+                                           "post": req.post_data or ""})
+
+              def on_response(res):
+                  if any(k in res.url for k in ["store", "topStore", "lottery", "winner"]):
+                      requests_log.append({"type": "response", "url": res.url,
+                                           "status": res.status})
+
+              page.on("request", on_request)
+              page.on("response", on_response)
+
+              page.goto("https://www.dhlottery.co.kr/common.do?method=main", timeout=30000, wait_until="domcontentloaded")
+              time.sleep(2)
+              page.goto("https://www.dhlottery.co.kr/store.do?method=topStore&pageGubun=L645&drwNo=1220",
+                        timeout=40000, wait_until="networkidle")
+              time.sleep(3)
+
+              with open("debug_draw.html", "w", encoding="utf-8") as f:
+                  f.write(page.content())
+              with open("debug_requests.json", "w", encoding="utf-8") as f:
+                  json.dump(requests_log, f, ensure_ascii=False, indent=2)
+
+              # 모든 fetch/XHR 요청 캡처
+              all_reqs = []
+              page.on("request", lambda r: all_reqs.append(r.url))
+              browser.close()
+
+          print("저장 완료. 캡처된 요청:", len(requests_log))
+          for r in requests_log:
+              print(" ", r)
+          EOF
+
+      - name: 아티팩트 업로드
         uses: actions/upload-artifact@v4
         with:
           name: debug-html
-          path: debug_draw.html
+          path: |
+            debug_draw.html
+            debug_requests.json
