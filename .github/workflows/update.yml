@@ -38,6 +38,6 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/stores_clean.geojson data/wins_raw.csv
+          git add --ignore-unmatch data/stores_clean.geojson data/wins_raw.csv
           git diff --staged --quiet || git commit -m "chore: 로또 데이터 자동 업데이트 $(date +'%Y-%m-%d')"
           git push
