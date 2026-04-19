@@ -3,7 +3,12 @@ name: 로또 데이터 자동 업데이트
 on:
   schedule:
     - cron: '0 2 * * 1'  # 매주 월요일 02:00 UTC (한국시간 11:00)
-  workflow_dispatch:       # 수동 실행 버튼
+  workflow_dispatch:
+    inputs:
+      draws:
+        description: '수집할 회차 수 (기본 5, 초기 전체 수집은 1200)'
+        required: false
+        default: '5'
 
 jobs:
   update:
@@ -25,13 +30,14 @@ jobs:
           pip install requests pandas lxml beautifulsoup4 cssselect playwright
           python -m playwright install chromium --with-deps
 
-      - name: 데이터 업데이트 (최근 5회차 증분)
+      - name: 데이터 업데이트
         env:
           KAKAO_REST_KEY: ${{ secrets.KAKAO_REST_KEY }}
+          DRAWS: ${{ github.event.inputs.draws || '5' }}
         run: |
           python scripts/build_stores.py \
             --kakao-rest-key "$KAKAO_REST_KEY" \
-            --draws 5 \
+            --draws "$DRAWS" \
             --resume
 
       - name: 변경사항 커밋 & 푸시
